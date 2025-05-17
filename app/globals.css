@@ -1,26 +1,260 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
+@layer base {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary: 221.2 83.2% 53.3%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 221.2 83.2% 53.3%;
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 217.2 91.2% 59.8%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 224.3 76.3% 48%;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* ------------------------------------
+ * Enhanced Code Block Styling
+ * ------------------------------------
+ * Last updated: 2025-05-17 17:27:19 by linhduongtuan
+ * 
+ * Improves visibility and contrast of code blocks in both light and dark mode
+ * Adds styling for the copy button and special handling for different languages
+ */
+
+/* Code block container styling - fixed circular dependency */
+.code-block-container {
+  @apply relative overflow-hidden rounded-lg;
+}
+
+/* Copy button hover behavior */
+.group:hover .copy-button {
+  opacity: 1;
+}
+
+@keyframes fade {
+  0%, 100% { opacity: 0; }
+  10%, 90% { opacity: 1; }
+}
+
+/* General code block styling */
+.prose pre {
+  @apply bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700;
+  @apply p-4 rounded-lg overflow-auto my-4 font-mono text-sm;
+}
+
+.prose code {
+  @apply bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200;
+  @apply px-1 py-0.5 rounded font-mono text-sm;
+}
+
+.prose pre code {
+  @apply p-0 text-gray-800 dark:text-gray-200 bg-transparent;
+}
+
+/* Remove quotation marks around inline code */
+.prose code:before,
+.prose code:after {
+  content: none !important;
+}
+
+/* Special styling for bash/shell code blocks - high contrast */
+.prose .language-bash,
+.prose .language-shell {
+  @apply bg-gray-900 dark:bg-gray-900 text-gray-100 dark:text-gray-100;
+  @apply border-gray-700 dark:border-gray-700;
+}
+
+.prose .language-bash code,
+.prose .language-shell code {
+  @apply bg-transparent text-gray-100 dark:text-gray-100;
+}
+
+/* Command and output styling for CLI examples */
+.command {
+  @apply text-green-500 dark:text-green-400 font-bold;
+}
+
+.output {
+  @apply text-gray-300 dark:text-gray-300;
+}
+
+/* Inline code styling for better visibility */
+:not(pre) > code {
+  @apply bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200;
+  @apply px-1.5 py-0.5 rounded text-sm;
+}
+
+/* Specific language syntax highlighting */
+.language-javascript,
+.language-typescript,
+.language-js,
+.language-ts {
+  @apply bg-gray-50 dark:bg-gray-800 border-blue-100 dark:border-blue-900;
+}
+
+.language-python,
+.language-py {
+  @apply bg-gray-50 dark:bg-gray-800 border-green-100 dark:border-green-900;
+}
+
+.language-json {
+  @apply bg-gray-50 dark:bg-gray-800 border-yellow-100 dark:border-yellow-900;
+}
+
+.language-html {
+  @apply bg-gray-50 dark:bg-gray-800 border-orange-100 dark:border-orange-900;
+}
+
+.language-css {
+  @apply bg-gray-50 dark:bg-gray-800 border-purple-100 dark:border-purple-900;
+}
+
+/* Code block container with copy button */
+.prose .code-block-wrapper {
+  @apply relative;
+}
+
+/* Copy button styling */
+.copy-button {
+  @apply absolute top-2 right-2 p-2 rounded-md bg-gray-700/80 dark:bg-gray-800/80;
+  @apply text-gray-200 hover:bg-gray-600 dark:hover:bg-gray-700;
+  @apply focus:outline-none focus:ring-2 focus:ring-blue-500;
+  @apply transition-all duration-200 opacity-0;
+}
+
+/* Typography customizations */
+.prose h1 {
+  @apply text-3xl font-bold dark:text-white mb-6;
+}
+
+.prose h2 {
+  @apply text-2xl font-bold dark:text-white mt-10 mb-4;
+}
+
+.prose h3 {
+  @apply text-xl font-semibold dark:text-white mt-8 mb-3;
+}
+
+.prose h4 {
+  @apply text-lg font-medium dark:text-white mt-6 mb-2;
+}
+
+.prose p {
+  @apply mb-4 dark:text-gray-300;
+}
+
+.prose a {
+  @apply text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors;
+}
+
+.prose ul, 
+.prose ol {
+  @apply my-4 pl-5;
+}
+
+.prose li {
+  @apply mb-1 dark:text-gray-300;
+}
+
+.prose blockquote {
+  @apply border-l-4 border-gray-300 dark:border-gray-600 pl-4 italic dark:text-gray-400;
+}
+
+/* Subscription form styling */
+.subscription-form {
+  @apply bg-blue-50 dark:bg-blue-900/30 p-6 rounded-lg;
+}
+
+/* Comment section styling */
+.comment-section {
+  @apply mt-12 pt-8 border-t border-gray-200 dark:border-gray-700;
+}
+
+/* Blog post styling */
+.blog-post {
+  @apply max-w-3xl mx-auto;
+}
+
+/* Code block container with group hover for copy button */
+.code-block-wrapper {
+  position: relative;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  margin: 1.5rem 0;
+}
+
+/* Copy button that appears on hover */
+.code-block-wrapper button {
+  opacity: 0;
+  transition: opacity 200ms, background-color 200ms;
+}
+
+.code-block-wrapper:hover button {
+  opacity: 1;
+}
+
+/* Special styling for bash code blocks */
+.language-bash,
+.language-shell {
+  background-color: #1a1a1a !important;
+  color: #f8f8f8 !important;
+  border-color: #333 !important;
+}
+
+.language-bash code,
+.language-shell code {
+  color: #f8f8f8 !important;
+  background-color: transparent !important;
+}
+
+/* Remove quotation marks around inline code */
+.prose code:before,
+.prose code:after {
+  content: none !important;
 }
