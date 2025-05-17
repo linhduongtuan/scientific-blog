@@ -258,3 +258,28 @@
 .prose code:after {
   content: none !important;
 }
+
+/* Add these styles to improve mobile touch handling */
+@layer utilities {
+  .touch-manipulation {
+    touch-action: manipulation;
+  }
+}
+
+/* Fix for iOS Safari dark mode flash on page load */
+html.dark {
+  color-scheme: dark;
+}
+
+/* Enhance mobile menu transition */
+#mobile-menu {
+  transition-property: max-height, opacity;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 300ms;
+}
+
+/* Improve tap targets on mobile */
+button, a {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
