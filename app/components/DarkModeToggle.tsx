@@ -1,47 +1,110 @@
 "use client"
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useTheme } from 'next-themes'
 
 export default function DarkModeToggle() {
   const [mounted, setMounted] = useState(false)
-  const { theme, setTheme } = useTheme()
-
+  const { resolvedTheme, setTheme } = useTheme()
+  const [isActive, setIsActive] = useState(false)
+  const buttonRef = useRef<HTMLButtonElement>(null)
+  
   // Only show the toggle after component mounts to avoid hydration mismatch
   useEffect(() => {
     setMounted(true)
   }, [])
+  
+  // Force theme application on mobile devices
+  const forceThemeUpdate = (newTheme: string) => {
+    // Apply theme directly to HTML element as a fallback
+    const htmlElement = document.documentElement;
+    
+    if (newTheme === 'dark') {
+      htmlElement.classList.add('dark');
+      htmlElement.style.colorScheme = 'dark';
+      // Force dark mode for problematic mobile browsers
+      localStorage.setItem('scientific-blog-theme', 'dark');
+    } else {
+      htmlElement.classList.remove('dark');
+      htmlElement.style.colorScheme = 'light';
+      // Force light mode for problematic mobile browsers
+      localStorage.setItem('scientific-blog-theme', 'light');
+    }
+    
+    // Update theme using next-themes
+    setTheme(newTheme);
+  };
+  
+  // Handle button press with visual feedback for mobile
+  const handleToggle = () => {
+    // Provide visual feedback first
+    setIsActive(true);
+    setTimeout(() => setIsActive(false), 300);
+    
+    // Toggle theme with the force update method
+    const newTheme = resolvedTheme === 'dark' ? 'light' : 'dark';
+    forceThemeUpdate(newTheme);
+    
+    // Add vibration feedback on mobile if supported
+    if (navigator.vibrate) {
+      navigator.vibrate(50);
+    }
+  };
+  
+  // Create separate touch handler for mobile
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    e.preventDefault();
+    handleToggle();
+  };
 
   if (!mounted) {
+    // Return a placeholder button during SSR/initial render
     return (
-      <button 
-        className="w-9 h-9 flex items-center justify-center rounded-md bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200"
-        aria-label="Toggle dark mode"
-      >
-        <span className="sr-only">Toggle dark mode</span>
-        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-        </svg>
-      </button>
-    )
+      <div 
+        className="w-10 h-10 rounded-lg bg-gray-200 dark:bg-gray-700 flex items-center justify-center cursor-wait"
+        aria-hidden="true"
+      />
+    );
   }
 
   return (
     <button
-      onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-      className="w-9 h-9 flex items-center justify-center rounded-md bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200 transition-colors"
-      aria-label="Toggle dark mode"
+      ref={buttonRef}
+      onClick={handleToggle}
+      onTouchEnd={handleTouchEnd}
+      className={`
+        w-10 h-10 rounded-lg flex items-center justify-center
+        ${isActive ? 'scale-90' : 'scale-100'}
+        ${resolvedTheme === 'dark' 
+          ? 'bg-gray-700 text-yellow-300' 
+          : 'bg-blue-50 text-blue-900'}
+        transition-all duration-200 ease-in-out
+        shadow-sm hover:shadow focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500
+      `}
+      aria-label={resolvedTheme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+      data-theme-toggle="true"
+      role="switch"
+      aria-checked={resolvedTheme === 'dark'}
     >
-      <span className="sr-only">Toggle dark mode</span>
-      {theme === 'dark' ? (
-        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+      {resolvedTheme === 'dark' ? (
+        <svg 
+          xmlns="http://www.w3.org/2000/svg" 
+          viewBox="0 0 24 24" 
+          fill="currentColor" 
+          className="w-6 h-6"
+        >
+          <path d="M12 2.25a.75.75 0 01.75.75v2.25a.75.75 0 01-1.5 0V3a.75.75 0 01.75-.75zM7.5 12a4.5 4.5 0 119 0 4.5 4.5 0 01-9 0zM18.894 6.166a.75.75 0 00-1.06-1.06l-1.591 1.59a.75.75 0 101.06 1.061l1.591-1.59zM21.75 12a.75.75 0 01-.75.75h-2.25a.75.75 0 010-1.5H21a.75.75 0 01.75.75zM17.834 18.894a.75.75 0 001.06-1.06l-1.59-1.591a.75.75 0 10-1.061 1.06l1.59 1.591zM12 18a.75.75 0 01.75.75V21a.75.75 0 01-1.5 0v-2.25A.75.75 0 0112 18zM7.758 17.303a.75.75 0 00-1.061-1.06l-1.591 1.59a.75.75 0 001.06 1.061l1.591-1.59zM6 12a.75.75 0 01-.75.75H3a.75.75 0 010-1.5h2.25A.75.75 0 016 12zM6.697 7.757a.75.75 0 001.06-1.06l-1.59-1.591a.75.75 0 00-1.061 1.06l1.59 1.591z" />
         </svg>
       ) : (
-        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+        <svg 
+          xmlns="http://www.w3.org/2000/svg" 
+          viewBox="0 0 24 24" 
+          fill="currentColor" 
+          className="w-6 h-6"
+        >
+          <path fillRule="evenodd" d="M9.528 1.718a.75.75 0 01.162.819A8.97 8.97 0 009 6a9 9 0 009 9 8.97 8.97 0 003.463-.69.75.75 0 01.981.98 10.503 10.503 0 01-9.694 6.46c-5.799 0-10.5-4.701-10.5-10.5 0-4.368 2.667-8.112 6.46-9.694a.75.75 0 01.818.162z" clipRule="evenodd" />
         </svg>
       )}
     </button>
-  )
+  );
 }

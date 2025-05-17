@@ -49,6 +49,65 @@
   }
 }
 
+/* Add these at the top of your globals.css file */
+
+/* Prevent transition flash on page load */
+.no-transitions * {
+  transition: none !important;
+}
+
+/* Fix for iOS Safari dark mode */
+:root {
+  color-scheme: light dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+  }
+}
+
+html.dark {
+  color-scheme: dark;
+}
+
+html:not(.dark) {
+  color-scheme: light;
+}
+
+/* Ensure proper theme colors */
+:root {
+  --bg-light: #ffffff;
+  --text-light: #1a202c;
+  --bg-dark: #1a202c;
+  --text-dark: #f7fafc;
+}
+
+/* Improve touch targets for mobile */
+@media (max-width: 640px) {
+  button, a {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  [data-theme-toggle="true"] {
+    transform: scale(1.05);
+    margin: 0 0.2rem;
+  }
+}
+
+/* Ensure mobile-friendly transitions */
+@media (hover: none) {
+  .hover\:bg-gray-200:hover {
+    background-color: inherit !important;
+  }
+  
+  .hover\:bg-gray-700:hover {
+    background-color: inherit !important;
+  }
+}
+
+
 @layer base {
   * {
     @apply border-border;

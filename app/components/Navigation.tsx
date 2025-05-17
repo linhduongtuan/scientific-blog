@@ -17,7 +17,7 @@ export default function Navigation() {
   }, [pathname])
   
   // Current date and time information
-  const currentDate = "2025-05-17 20:30:21"
+  const currentDate = "2025-05-17 20:52:06"
   const currentUser = "linhduongtuan"
   
   const navLinks = [
@@ -65,9 +65,24 @@ export default function Navigation() {
               Subscribe
             </button>
             <DarkModeToggle />
+            {/* Debug button - added here */}
+            <button 
+              onClick={() => {
+                const debugEl = document.getElementById('theme-debug');
+                if (debugEl) {
+                  debugEl.style.display = debugEl.style.display === 'none' ? 'block' : 'none';
+                }
+              }}
+              className="hidden sm:flex w-8 h-8 items-center justify-center bg-gray-100 dark:bg-gray-800 rounded-md ml-2"
+              aria-label="Debug Theme"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
+                <path fillRule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clipRule="evenodd" />
+              </svg>
+            </button>
           </div>
           
-          {/* Mobile buttons and hamburger */}
+          {/* Mobile buttons and hamburger - No changes here */}
           <div className="flex items-center sm:hidden">
             <button
               onClick={() => setShowSubscribeModal(true)}
@@ -99,6 +114,7 @@ export default function Navigation() {
         </div>
       </div>
 
+      {/* Rest of the component remains unchanged */}
       {/* Mobile menu, explicitly controlled by state */}
       <div 
         className={`sm:hidden transition-all duration-300 ease-in-out ${isMenuOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0 overflow-hidden'}`} 
