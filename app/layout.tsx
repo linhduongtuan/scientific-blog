@@ -1,6 +1,6 @@
 import { ThemeProvider } from 'next-themes'
-import { NextAuthProvider } from '@/contexts/NextAuthProvider'
 import { AuthProvider } from '@/contexts/AuthContext'
+import { NextAuthProvider } from '@/contexts/NextAuthProvider'
 import type { Metadata } from 'next'
 import './globals.css'
 import Navigation from './components/Navigation'

@@ -9,9 +9,7 @@ interface User {
   email: string;
   role: "USER" | "ADMIN";
   subscribed: boolean;
-  emailVerified: string | null;
 }
-
 
 interface AuthContextType {
   user: User | null;
@@ -29,10 +27,9 @@ const DEMO_USERS = [
     id: "1",
     name: "Admin User",
     email: "admin@example.com",
-    password: "password123", // In a real app, never store plain text passwords!
+    password: "password123",
     role: "ADMIN" as const,
-    subscribed: true,
-    emailVerified: new Date().toISOString()
+    subscribed: true
   },
   {
     id: "2",
@@ -40,8 +37,7 @@ const DEMO_USERS = [
     email: "user@example.com",
     password: "password123",
     role: "USER" as const,
-    subscribed: false,
-    emailVerified: new Date().toISOString()
+    subscribed: false
   },
   {
     id: "3",
@@ -49,8 +45,7 @@ const DEMO_USERS = [
     email: "premium@example.com",
     password: "password123",
     role: "USER" as const,
-    subscribed: true,
-    emailVerified: new Date().toISOString()
+    subscribed: true
   }
 ];
 
@@ -76,18 +71,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Check if user is logged in on initial load
   useEffect(() => {
-    const storedUser = localStorage.getItem('scientificBlogUser');
-    
-    if (storedUser) {
-      try {
-        const parsedUser = JSON.parse(storedUser);
-        setUser(parsedUser);
-        setIsAdmin(parsedUser.role === "ADMIN");
-        setIsSubscribed(parsedUser.subscribed);
-        setStatus("authenticated");
-      } catch (error) {
-        console.error("Failed to parse stored user data:", error);
-        localStorage.removeItem('scientificBlogUser');
+    if (typeof window !== 'undefined') {
+      const storedUser = localStorage.getItem('scientificBlogUser');
+      
+      if (storedUser) {
+        try {
+          const parsedUser = JSON.parse(storedUser);
+          setUser(parsedUser);
+          setIsAdmin(parsedUser.role === "ADMIN");
+          setIsSubscribed(parsedUser.subscribed);
+          setStatus("authenticated");
+        } catch (error) {
+          console.error("Failed to parse stored user data:", error);
+          localStorage.removeItem('scientificBlogUser');
+          setStatus("unauthenticated");
+        }
+      } else {
         setStatus("unauthenticated");
       }
     } else {
@@ -112,7 +111,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { password: _, ...userWithoutPassword } = user;
     
     // Store user in localStorage
-    localStorage.setItem('scientificBlogUser', JSON.stringify(userWithoutPassword));
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('scientificBlogUser', JSON.stringify(userWithoutPassword));
+    }
     
     // Update state
     setUser(userWithoutPassword);
@@ -130,9 +131,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return { error: "Email already in use" };
     }
     
-    // In a real app, this would be a server-side API call
-    // For demo purposes, we'll simulate sending a verification email
-    
     return { 
       success: true, 
       message: "Registration successful! Please check your email for verification." 
@@ -142,7 +140,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Sign out function
   const signout = async () => {
     // Remove user from localStorage
-    localStorage.removeItem('scientificBlogUser');
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('scientificBlogUser');
+    }
     
     // Update state
     setUser(null);
