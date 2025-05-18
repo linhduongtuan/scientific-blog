@@ -17,7 +17,7 @@ export default function Navigation() {
   }, [pathname])
   
   // Current date and time information
-  const currentDate = "2025-05-17 20:52:06"
+  const currentDate = "2025-05-18 08:43:24"
   const currentUser = "linhduongtuan"
   
   const navLinks = [
@@ -65,7 +65,7 @@ export default function Navigation() {
               Subscribe
             </button>
             <DarkModeToggle />
-            {/* Debug button - added here */}
+            {/* Debug button */}
             <button 
               onClick={() => {
                 const debugEl = document.getElementById('theme-debug');
@@ -82,7 +82,7 @@ export default function Navigation() {
             </button>
           </div>
           
-          {/* Mobile buttons and hamburger - No changes here */}
+          {/* Mobile buttons and hamburger */}
           <div className="flex items-center sm:hidden">
             <button
               onClick={() => setShowSubscribeModal(true)}
@@ -114,7 +114,6 @@ export default function Navigation() {
         </div>
       </div>
 
-      {/* Rest of the component remains unchanged */}
       {/* Mobile menu, explicitly controlled by state */}
       <div 
         className={`sm:hidden transition-all duration-300 ease-in-out ${isMenuOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0 overflow-hidden'}`} 
@@ -157,7 +156,7 @@ export default function Navigation() {
                 </button>
               </div>
               <div className="p-6">
-                <SubscriptionForm />
+                <SubscriptionForm onSuccess={() => setShowSubscribeModal(false)} />
               </div>
             </div>
           </div>

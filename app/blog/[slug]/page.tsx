@@ -87,7 +87,7 @@ export default async function BlogPost({ params }: { params: { slug: string } })
       
       {/* Comment Section */}
       <div className="mt-12 pt-8 border-t border-gray-200 dark:border-gray-700">
-        <CommentSection postSlug={post.slug} />
+        <CommentSection postId={post.slug} />
       </div>
       
       <div className="border-t border-gray-200 dark:border-gray-700 mt-12 pt-8">
