@@ -1,36 +1,119 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Scientific Blog Platform
+
+![Scientific Blog Platform](public/images/scientific-blog-banner.png)
+
+A modern, responsive blog platform built with Next.js 14, focused on scientific and research content with enhanced code blocks, dark mode support, and MDX content.
+
+## Features
+
+- **Modern React & Next.js 14**: Utilizes the latest React features and Next.js App Router
+- **MDX Support**: Write content with Markdown + JSX
+- **Code Syntax Highlighting**: Enhanced code blocks with language detection and copy functionality
+- **Dark Mode Support**: Seamless light/dark mode switching
+- **Responsive Design**: Mobile-first approach for all devices
+- **Blog Management**: Categorization, tagging, and searching
+- **Interactive Components**: Subscription form with custom questions
+- **SEO Optimized**: Built-in metadata support
+- **TypeScript**: Type-safe development experience
+
+## Tech Stack
+
+- **Framework**: Next.js 14 (App Router)
+- **Language**: TypeScript
+- **Styling**: Tailwind CSS
+- **Content**: MDX with next-mdx-remote
+- **Deployment**: Vercel (recommended)
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- Node.js 18.x or later
+- npm or yarn
+
+### Installation
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/linhduongtuan/scientific-blog.git
+   cd scientific-blog
+   ```
+
+2. Install dependencies:
+   ```bash
+   npm install
+    # or
+    yarn install
+    ```
+3. Run the development server:
+   ```bash
+   npm run dev
+   # or
+   yarn dev
+   ```
+4. Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.   
+
+### Project Structure
+---
+```markdown
+scientific-blog/
+├── app/                    # Next.js App Router
+│   ├── about/              # About page
+│   ├── blog/               # Blog pages
+│   │   ├── [slug]/         # Dynamic blog post page
+│   │   └── page.tsx        # Blog listing page
+│   ├── components/         # React components
+│   ├── content/            # MDX content
+│   │   └── blog/           # Blog posts as MDX files
+│   ├── globals.css         # Global styles
+│   ├── layout.tsx          # Root layout
+│   ├── lib/                # Utility functions
+│   │   └── mdx.ts          # MDX processing utilities
+│   └── page.tsx            # Home page
+├── public/                 # Static assets
+├── next.config.js          # Next.js configuration
+├── package.json            # Project dependencies
+├── tailwind.config.js      # Tailwind CSS configuration
+└── tsconfig.json           # TypeScript configuration
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Creating Content
+---
+#### Creating Blog Posts
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+1. Add a new MDX file in app/content/blog/
+2. Include frontmatter at the top of the file:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```MDX
+---
+title: "Your Blog Post Title"
+date: "2025-05-17"
+author: "Your Name"
+excerpt: "A brief summary of your blog post"
+tags: ["science", "research", "tutorial"]
+readingTime: "5 min read"
+---
 
-## Learn More
+Your content here...
+```
 
-To learn more about Next.js, take a look at the following resources:
+#### Using Code Blocks
+Code blocks with syntax highlighting and copy button:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```md
+```python
+def hello_world():
+    print("Hello, World!")
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Deployment
+---
+The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new) from the creators of Next.js.
 
-## Deploy on Vercel
+### Contributing
+---
+Contributions are welcome! Please feel free to submit a Pull Request.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### License
+---
+This project is licensed under the MIT License - see the LICENSE file for details.
