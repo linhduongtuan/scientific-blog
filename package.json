@@ -4,12 +4,13 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "npm install --legacy-peer-deps && next build",
     "start": "next start",
     "lint": "next lint"
   },
   "dependencies": {
-    "@auth/core": "^0.39.1",
+    // "@auth/core": "^0.39.1",
+    "@auth/core": "0.34.2",
     "@auth/prisma-adapter": "^2.9.1",
     "bcrypt": "^6.0.0",
     "gray-matter": "^4.0.3",
