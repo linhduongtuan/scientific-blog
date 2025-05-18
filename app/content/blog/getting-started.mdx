@@ -1,0 +1,174 @@
+---
+title: "Getting Started with Scientific Research"
+date: "2025-05-18"
+description: "A guide to beginning your journey in scientific research"
+image: "/images/blog/getting-started.jpg"
+author: "Dr. Jane Smith"
+authorImage: "/images/authors/jane-smith.jpg"
+tags: ["research", "beginners", "methodology"]
+---
+
+# Getting Started with Scientific Research
+
+Scientific research is an exciting journey of discovery that requires methodical approaches and critical thinking. In this article, we'll explore how to get started.
+
+## Identifying Research Questions
+
+The first step in any research project is to identify a clear, focused research question. A good research question should be:
+
+- **Specific**: Clearly defined and narrow in scope
+- **Measurable**: Can be investigated through data collection
+- **Achievable**: Realistic given your resources and timeframe
+- **Relevant**: Connected to existing knowledge and meaningful to your field
+- **Time-bound**: Can be completed within a reasonable timeframe
+
+## Literature Review
+
+Before diving into your own research, it's crucial to understand what's already known in your field:
+
+```bash
+# Example of a literature search strategy
+1. Identify key terms related to your research question
+2. Search academic databases (PubMed, IEEE Xplore, etc.)
+3. Filter for recent, peer-reviewed publications
+4. Organize findings by theme or approach
+5. Identify gaps in existing research
+```
+
+### Research Design
+---
+A well-designed research methodology is essential for generating reliable results. Consider:
+
+1. Quantitative vs. qualitative approaches
+2. Experimental, observational, or theoretical methods
+3. Sample size and selection criteria
+4. Data collection techniques
+Analysis methods
+Remember that the best research design is the one that most effectively answers your research question, not necessarily the most complex or sophisticated approach.
+
+### Getting started is the hardest part!
+---
+Don't let the complexity of research intimidate you. Start small, be methodical, and remember that all researchers—even the most accomplished—began exactly where you are now.
+
+```bash
+## Verify Your MDX Configuration
+
+Make sure your `mdx.ts` file is properly configured:
+
+```typescript name=app/lib/mdx.ts
+import fs from 'fs'
+import path from 'path'
+import matter from 'gray-matter'
+import { compileMDX } from 'next-mdx-remote/rsc'
+import rehypeHighlight from 'rehype-highlight'
+import rehypeImgSize from 'rehype-img-size'
+import remarkGfm from 'remark-gfm'
+
+// Define interfaces for type safety
+export interface Post {
+  slug: string
+  title: string
+  date: string
+  description: string
+  image?: string
+  author?: string
+  authorImage?: string
+  tags?: string[]
+  content: React.ReactNode
+}
+
+export interface PostMeta {
+  slug: string
+  title: string
+  date: string
+  description: string
+  image?: string
+  author?: string
+  authorImage?: string
+  tags?: string[]
+}
+
+// Directory where blog posts are stored
+const postsDirectory = path.join(process.cwd(), 'content/blog')
+
+// Get all MDX files in the posts directory
+export async function getPostSlugs() {
+  try {
+    return fs.readdirSync(postsDirectory).filter(file => file.endsWith('.mdx'))
+  } catch (error) {
+    console.error("Error reading posts directory:", error)
+    return []
+  }
+}
+
+// Get post metadata for all posts
+export async function getAllPosts(): Promise<PostMeta[]> {
+  const slugs = await getPostSlugs()
+  const posts = await Promise.all(
+    slugs.map(async (slug) => {
+      const postData = await getPostBySlug(slug.replace('.mdx', ''))
+      return {
+        slug: slug.replace('.mdx', ''),
+        title: postData.title,
+        date: postData.date,
+        description: postData.description,
+        image: postData.image,
+        author: postData.author,
+        authorImage: postData.authorImage,
+        tags: postData.tags,
+      }
+    })
+  )
+  
+  // Sort posts by date (newest first)
+  return posts.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+}
+
+// Get a single post by slug
+export async function getPostBySlug(slug: string): Promise<Post> {
+  try {
+    const fullPath = path.join(postsDirectory, `${slug}.mdx`)
+    const fileContents = fs.readFileSync(fullPath, 'utf8')
+    
+    // Parse frontmatter with gray-matter
+    const { data, content } = matter(fileContents)
+    
+    // Process the content with MDX
+    const result = await compileMDX({
+      source: content,
+      options: {
+        parseFrontmatter: true,
+        mdxOptions: {
+          remarkPlugins: [remarkGfm],
+          rehypePlugins: [
+            rehypeHighlight,
+            [rehypeImgSize as any, { dir: 'public' }]
+          ],
+        },
+      },
+    })
+    
+    // Return post with frontmatter and processed content
+    return {
+      slug,
+      title: data.title,
+      date: data.date,
+      description: data.description,
+      image: data.image,
+      author: data.author,
+      authorImage: data.authorImage,
+      tags: data.tags,
+      content: result.content,
+    }
+  } catch (error) {
+    console.error(`Error processing post ${slug}:`, error)
+    return {
+      slug,
+      title: 'Error loading post',
+      date: new Date().toISOString(),
+      description: 'There was an error loading this post.',
+      content: <p>This post could not be loaded. Please try again later.</p>,
+    }
+  }
+}
+```
