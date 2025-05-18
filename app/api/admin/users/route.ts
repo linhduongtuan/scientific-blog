@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
+import { getServerSession } from "next-auth/next";
 import { PrismaClient } from '@prisma/client';
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 
@@ -17,20 +17,31 @@ if (process.env.NODE_ENV !== 'production') global.prisma = prisma;
 // Extend the next-auth session types
 declare module "next-auth" {
   interface Session {
-    user: {
+    user?: {
       id?: string;
       name?: string;
       email?: string;
+      image?: string;
       role?: string;
+      subscribed?: boolean;
     }
   }
 }
 
-export async function GET(req: NextRequest) {
+export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await getServerSession(authOptions) as {
+      user?: {
+        id?: string;
+        name?: string;
+        email?: string;
+        image?: string;
+        role?: string;
+        subscribed?: boolean;
+      }
+    } | null;
 
-    if (!session || session.user.role !== "ADMIN") {
+    if (!session || !session.user || session.user.role !== "ADMIN") {
       return NextResponse.json(
         { message: "Unauthorized" },
         { status: 403 }

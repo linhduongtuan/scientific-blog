@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
+import { getServerSession } from "next-auth/next";
 import { PrismaClient } from "@prisma/client";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { Session } from "next-auth";
 // Remove the external import since we have the function defined in this file
 
 declare global {
@@ -17,9 +18,9 @@ export async function PATCH(
   { params }: { params: { id: string } }
 ) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await getServerSession(authOptions) as Session | null;
 
-    if (!session?.user || (session.user as any).role !== "ADMIN") {
+    if (!session?.user || session.user.role !== "ADMIN") {
       return NextResponse.json(
         { message: "Unauthorized" },
         { status: 403 }
