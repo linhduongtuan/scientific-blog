@@ -1,4 +1,19 @@
-import { NextAuthOptions } from "next-auth";
+import { NextResponse } from "next/server";
+
+// Define the NextAuthOptions type manually to avoid import issues
+interface NextAuthOptions {
+  providers: any[];
+  secret?: string;
+  pages?: {
+    signIn?: string;
+    error?: string;
+    verifyRequest?: string;
+  };
+  callbacks?: {
+    jwt?: (params: any) => Promise<any>;
+    session?: (params: any) => Promise<any>;
+  };
+}
 
 export const authOptions: NextAuthOptions = {
   providers: [],
@@ -18,7 +33,7 @@ export const authOptions: NextAuthOptions = {
       return token;
     },
     async session({ session, token }: any) {
-      if (token) {
+      if (token && session.user) {
         session.user.id = token.id;
         session.user.role = token.role;
         session.user.subscribed = token.subscribed;
@@ -28,15 +43,11 @@ export const authOptions: NextAuthOptions = {
   },
 };
 
-// This is a placeholder for NextAuth.js
+// Route handlers for Next.js App Router
 export function GET() {
-  return new Response("NextAuth route - Replace with actual implementation", {
-    status: 200,
-  });
+  return NextResponse.json({ status: "auth not implemented yet" });
 }
 
 export function POST() {
-  return new Response("NextAuth route - Replace with actual implementation", {
-    status: 200,
-  });
+  return NextResponse.json({ status: "auth not implemented yet" });
 }
