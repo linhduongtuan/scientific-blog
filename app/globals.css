@@ -118,13 +118,28 @@ html:not(.dark) {
 }
 
 /* ------------------------------------
- * Enhanced Code Block Styling
+ * Enhanced Code Block Styling with Syntax Highlighting
  * ------------------------------------
- * Last updated: 2025-05-17 17:27:19 by linhduongtuan
+ * Last updated: 2025-06-17 by Rovo Dev
  * 
- * Improves visibility and contrast of code blocks in both light and dark mode
- * Adds styling for the copy button and special handling for different languages
+ * Modern code block styling with syntax highlighting, language labels,
+ * copy functionality, and improved visual design for both light and dark modes
  */
+
+/* Import highlight.js theme for syntax highlighting */
+@import 'highlight.js/styles/github.css';
+
+/* Apply light theme by default */
+:root {
+  --hljs-bg: #f6f8fa;
+  --hljs-color: #24292e;
+}
+
+/* Apply dark theme in dark mode */
+.dark {
+  --hljs-bg: #0d1117;
+  --hljs-color: #c9d1d9;
+}
 
 /* Code block container styling - fixed circular dependency */
 .code-block-container {
@@ -280,42 +295,127 @@ html:not(.dark) {
   @apply max-w-3xl mx-auto;
 }
 
-/* Code block container with group hover for copy button */
-.code-block-wrapper {
-  position: relative;
-  border-radius: 0.5rem;
-  overflow: hidden;
-  margin: 1.5rem 0;
+/* Enhanced Code Block Container */
+.enhanced-code-block {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  transition: box-shadow 0.2s ease-in-out;
 }
 
-/* Copy button that appears on hover */
-.code-block-wrapper button {
-  opacity: 0;
-  transition: opacity 200ms, background-color 200ms;
+.enhanced-code-block:hover {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
 }
 
-.code-block-wrapper:hover button {
-  opacity: 1;
+.dark .enhanced-code-block {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
 }
 
-/* Special styling for bash code blocks */
-.language-bash,
-.language-shell {
-  background-color: #1a1a1a !important;
-  color: #f8f8f8 !important;
-  border-color: #333 !important;
+.dark .enhanced-code-block:hover {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
 }
 
-.language-bash code,
-.language-shell code {
-  color: #f8f8f8 !important;
-  background-color: transparent !important;
+/* Syntax Highlighting Overrides */
+.enhanced-code-block pre {
+  background: var(--hljs-bg) !important;
+  color: var(--hljs-color) !important;
+  margin: 0;
+  font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+
+/* Syntax highlighting colors for light mode */
+:root .enhanced-code-block .hljs-keyword,
+:root .enhanced-code-block .hljs-selector-tag,
+:root .enhanced-code-block .hljs-built_in {
+  color: #d73a49;
+  font-weight: 600;
+}
+
+:root .enhanced-code-block .hljs-string,
+:root .enhanced-code-block .hljs-attr {
+  color: #032f62;
+}
+
+:root .enhanced-code-block .hljs-function,
+:root .enhanced-code-block .hljs-title {
+  color: #6f42c1;
+  font-weight: 600;
+}
+
+:root .enhanced-code-block .hljs-number,
+:root .enhanced-code-block .hljs-literal {
+  color: #005cc5;
+}
+
+:root .enhanced-code-block .hljs-comment {
+  color: #6a737d;
+  font-style: italic;
+}
+
+/* Syntax highlighting colors for dark mode */
+.dark .enhanced-code-block .hljs-keyword,
+.dark .enhanced-code-block .hljs-selector-tag,
+.dark .enhanced-code-block .hljs-built_in {
+  color: #ff7b72;
+  font-weight: 600;
+}
+
+.dark .enhanced-code-block .hljs-string,
+.dark .enhanced-code-block .hljs-attr {
+  color: #a5d6ff;
+}
+
+.dark .enhanced-code-block .hljs-function,
+.dark .enhanced-code-block .hljs-title {
+  color: #d2a8ff;
+  font-weight: 600;
+}
+
+.dark .enhanced-code-block .hljs-number,
+.dark .enhanced-code-block .hljs-literal {
+  color: #79c0ff;
+}
+
+.dark .enhanced-code-block .hljs-comment {
+  color: #8b949e;
+  font-style: italic;
+}
+
+/* Special styling for specific languages */
+.enhanced-code-block .language-bash,
+.enhanced-code-block .language-shell {
+  background: #1e1e1e !important;
+  color: #d4d4d4 !important;
+}
+
+.enhanced-code-block .language-python .hljs-keyword {
+  color: #569cd6;
+}
+
+.enhanced-code-block .language-javascript .hljs-keyword,
+.enhanced-code-block .language-typescript .hljs-keyword {
+  color: #c586c0;
 }
 
 /* Remove quotation marks around inline code */
 .prose code:before,
 .prose code:after {
   content: none !important;
+}
+
+/* Inline code styling */
+.prose :not(pre) > code {
+  background: rgba(175, 184, 193, 0.2) !important;
+  color: #e36209 !important;
+  padding: 0.125rem 0.25rem !important;
+  border-radius: 0.25rem !important;
+  font-size: 0.875em !important;
+  font-weight: 600 !important;
+}
+
+.dark .prose :not(pre) > code {
+  background: rgba(110, 118, 129, 0.4) !important;
+  color: #f0883e !important;
 }
 
 /* Add these styles to improve mobile touch handling */

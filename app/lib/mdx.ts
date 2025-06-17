@@ -1,7 +1,6 @@
 import fs from 'fs'
 import path from 'path'
 import matter from 'gray-matter'
-import { compileMDX } from 'next-mdx-remote/rsc'
 import { getCachedData } from './cache'
 
 // Define interfaces for type safety
@@ -18,7 +17,7 @@ interface BlogPostFrontmatter {
 
 interface BlogPost extends BlogPostFrontmatter {
   slug: string;
-  content: React.ReactNode;
+  content: string; // Raw markdown content for client-side rendering
   rawContent: string; // Add raw content for copy functionality
 }
 
@@ -36,13 +35,14 @@ export async function getBlogPostBySlug(slug: string): Promise<BlogPost | null> 
       
       try {
         const fileContents = fs.readFileSync(filePath, 'utf8')
-        const { frontmatter, content, rawContent } = await parseMDX(fileContents)
+        const { data, content } = matter(fileContents)
+        const frontmatter = data as BlogPostFrontmatter
         
         return {
           slug,
           ...frontmatter,
-          content,
-          rawContent
+          content, // Raw markdown content
+          rawContent: content
         } as BlogPost
       } catch (error) {
         console.error(`Error reading blog post ${slug}:`, error)
@@ -102,25 +102,4 @@ export async function getAllBlogPosts(): Promise<BlogPostListing[]> {
   )
 }
 
-async function parseMDX(source: string): Promise<{ 
-  frontmatter: BlogPostFrontmatter, 
-  content: React.ReactNode,
-  rawContent: string 
-}> {
-  // Parse frontmatter
-  const { data, content: markdownContent } = matter(source)
-  const frontmatter = data as BlogPostFrontmatter
-  
-  // Compile MDX content
-  const { content } = await compileMDX({
-    source: markdownContent,
-    options: { 
-      parseFrontmatter: false,
-      mdxOptions: {
-        development: process.env.NODE_ENV === 'development'
-      }
-    },
-  })
-  
-  return { frontmatter, content, rawContent: markdownContent }
-}
+// Remove the parseMDX function as we're now handling this differently
