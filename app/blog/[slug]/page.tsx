@@ -2,6 +2,10 @@ import Link from 'next/link'
 import { getBlogPostBySlug, getAllBlogPosts } from '../../lib/mdx'
 import CommentSection from '../../components/CommentSection'
 import BlogContent from '../../components/BlogContent'
+import ReadingProgress from '../../components/ReadingProgress'
+import SocialShare from '../../components/SocialShare'
+import TableOfContents from '../../components/TableOfContents'
+import RelatedPosts from '../../components/RelatedPosts'
 import { notFound } from 'next/navigation'
 
 // Generate static params for all blog posts
@@ -40,12 +44,24 @@ export default async function BlogPost({ params }: { params: { slug: string } })
   const currentUser = "linhduongtuan"
 
   return (
-    <article className="max-w-3xl mx-auto">
-      <div className="mb-8">
-        <Link href="/blog" className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300">
-          ← Back to Blog
-        </Link>
-      </div>
+    <>
+      <ReadingProgress />
+      <div className="max-w-7xl mx-auto">
+        <div className="flex gap-8">
+          {/* Table of Contents - Desktop Sidebar */}
+          <aside className="hidden lg:block w-64 flex-shrink-0">
+            <div className="sticky top-24 max-h-[calc(100vh-6rem)] overflow-y-auto">
+              <TableOfContents content={post.rawContent} />
+            </div>
+          </aside>
+
+          {/* Main Content */}
+          <article className="flex-1 min-w-0 max-w-4xl mx-auto lg:mx-0">
+          <div className="mb-8">
+            <Link href="/blog" className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300">
+              ← Back to Blog
+            </Link>
+          </div>
       
       {post.coverImage && (
         <div className="mb-8 rounded-lg overflow-hidden shadow-lg">
@@ -82,6 +98,15 @@ export default async function BlogPost({ params }: { params: { slug: string } })
         <p className="text-xl text-gray-700 dark:text-gray-300 italic">{post.excerpt}</p>
       </header>
       
+      {/* Social Share */}
+      <div className="mb-8">
+        <SocialShare 
+          title={post.title}
+          url={`/blog/${post.slug}`}
+          excerpt={post.excerpt}
+        />
+      </div>
+
       {/* Pass MDX content to client component for rendering */}
       <BlogContent content={post.content} />
       
@@ -90,29 +115,25 @@ export default async function BlogPost({ params }: { params: { slug: string } })
         <CommentSection postId={post.slug} />
       </div>
       
-      <div className="border-t border-gray-200 dark:border-gray-700 mt-12 pt-8">
-        <h2 className="text-2xl font-bold mb-6 dark:text-white">Related Articles</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {relatedPosts.length > 0 ? (
-            relatedPosts.map((relatedPost) => (
-              <div key={relatedPost.slug} className="border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 rounded-lg p-4 hover:shadow-md transition-shadow">
-                <Link href={`/blog/${relatedPost.slug}`} className="block">
-                  <h3 className="text-lg font-semibold mb-2 hover:text-blue-600 dark:hover:text-blue-400 transition-colors dark:text-white">{relatedPost.title}</h3>
-                  <p className="text-gray-600 dark:text-gray-400 text-sm mb-2">{formatDate(relatedPost.date)} • {relatedPost.readingTime}</p>
-                  <p className="text-gray-700 dark:text-gray-300">{relatedPost.excerpt.substring(0, 100)}...</p>
-                </Link>
-              </div>
-            ))
-          ) : (
-            <p className="text-gray-600 dark:text-gray-400 col-span-2 text-center">No related articles found.</p>
-          )}
+      {/* Related Posts */}
+      <RelatedPosts 
+        currentSlug={post.slug}
+        currentTags={post.tags || []}
+        allPosts={allPosts}
+      />
+      
+            {/* Last updated information */}
+            <div className="mt-6 text-xs text-gray-500 dark:text-gray-400 text-right">
+              <p>Last updated: {currentDate} by {currentUser}</p>
+            </div>
+          </article>
+
+          {/* Mobile TOC Toggle */}
+          <div className="lg:hidden fixed bottom-4 right-4 z-50">
+            <TableOfContents content={post.rawContent} />
+          </div>
         </div>
       </div>
-      
-      {/* Last updated information */}
-      <div className="mt-6 text-xs text-gray-500 dark:text-gray-400 text-right">
-        <p>Last updated: {currentDate} by {currentUser}</p>
-      </div>
-    </article>
+    </>
   )
 }

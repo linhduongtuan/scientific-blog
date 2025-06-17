@@ -1,89 +1,165 @@
-import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth/next";
-import { PrismaClient } from "@prisma/client";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
-import { Session } from "next-auth";
-// Remove the external import since we have the function defined in this file
+import { NextRequest, NextResponse } from "next/server"
+import { prisma } from "@/app/lib/prisma"
+import { requireAdmin } from "@/app/lib/auth"
+import { updateUserSchema } from "@/app/lib/validation"
+import { apiRateLimit } from "@/app/lib/rate-limit"
 
-declare global {
-  var prisma: PrismaClient | undefined;
-}
-
-export const prisma = global.prisma || new PrismaClient();
-
-if (process.env.NODE_ENV !== "production") global.prisma = prisma;
-
-export async function PATCH(
-  req: NextRequest,
+export async function GET(
+  request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    const session = await getServerSession(authOptions) as Session | null;
-
-    if (!session?.user || session.user.role !== "ADMIN") {
+    const rateLimitResult = apiRateLimit(request)
+    if (!rateLimitResult.success) {
       return NextResponse.json(
-        { message: "Unauthorized" },
-        { status: 403 }
-      );
+        { error: "Too many requests. Please try again later." },
+        { status: 429 }
+      )
     }
 
-    const { id } = params;
-    const data = await req.json();
+    await requireAdmin()
 
-    // Validate user exists
-    const existingUser = await prisma.user.findUnique({
-      where: { id },
-    });
+    const user = await prisma.user.findUnique({
+      where: { id: params.id },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        emailVerified: true,
+        role: true,
+        subscribed: true,
+        createdAt: true,
+        updatedAt: true,
+        _count: {
+          select: {
+            comments: true
+          }
+        }
+      }
+    })
 
-    if (!existingUser) {
+    if (!user) {
       return NextResponse.json(
-        { message: "User not found" },
+        { error: "User not found" },
         { status: 404 }
-      );
+      )
     }
 
-    // Update user
-    const updatedUser = await prisma.user.update({
-      where: { id },
-      data,
-    });
-
-    // If subscription was activated, send confirmation email
-    if (data.subscribed === true && !existingUser.subscribed) {
-      await sendSubscriptionConfirmationEmail(
-        existingUser.email,
-        existingUser.name || "User"
-      );
+    return NextResponse.json(user)
+  } catch (error: any) {
+    console.error("Error fetching user:", error)
+    
+    if (error.message === "Authentication required") {
+      return NextResponse.json({ error: "Please sign in" }, { status: 401 })
     }
-
-    return NextResponse.json({
-      message: "User updated successfully",
-      user: {
-        id: updatedUser.id,
-        name: updatedUser.name,
-        email: updatedUser.email,
-        role: updatedUser.role,
-        subscribed: updatedUser.subscribed,
-      },
-    });
-  } catch (error) {
-    console.error("Error updating user:", error);
-    return NextResponse.json(
-      { message: "Internal server error" },
-      { status: 500 }
-    );
+    
+    if (error.message === "Admin access required") {
+      return NextResponse.json({ error: "Admin access required" }, { status: 403 })
+    }
+    
+    return NextResponse.json({ error: "Failed to fetch user" }, { status: 500 })
   }
 }
 
-// This function is now defined here instead of being imported
-export async function sendSubscriptionConfirmationEmail(email: string, name: string) {
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
   try {
-    // Implement your email sending logic here
-    console.log(`Sending confirmation email to ${name} at ${email}`);
-    // This is a placeholder. You would normally use a service like SendGrid, Mailchimp, etc.
-    return true;
-  } catch (error) {
-    console.error('Error sending confirmation email:', error);
-    throw error;
+    const rateLimitResult = apiRateLimit(request)
+    if (!rateLimitResult.success) {
+      return NextResponse.json(
+        { error: "Too many requests. Please try again later." },
+        { status: 429 }
+      )
+    }
+
+    await requireAdmin()
+
+    const body = await request.json()
+    const validatedData = updateUserSchema.parse(body)
+
+    const updatedUser = await prisma.user.update({
+      where: { id: params.id },
+      data: validatedData,
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        emailVerified: true,
+        role: true,
+        subscribed: true,
+        createdAt: true,
+        updatedAt: true
+      }
+    })
+
+    return NextResponse.json(updatedUser)
+  } catch (error: any) {
+    console.error("Error updating user:", error)
+    
+    if (error.name === 'ZodError') {
+      return NextResponse.json(
+        { error: "Invalid user data", details: error.errors },
+        { status: 400 }
+      )
+    }
+    
+    if (error.message === "Authentication required") {
+      return NextResponse.json({ error: "Please sign in" }, { status: 401 })
+    }
+    
+    if (error.message === "Admin access required") {
+      return NextResponse.json({ error: "Admin access required" }, { status: 403 })
+    }
+    
+    if (error.code === 'P2002') {
+      return NextResponse.json({ error: "Email already exists" }, { status: 409 })
+    }
+    
+    if (error.code === 'P2025') {
+      return NextResponse.json({ error: "User not found" }, { status: 404 })
+    }
+    
+    return NextResponse.json({ error: "Failed to update user" }, { status: 500 })
+  }
+}
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const rateLimitResult = apiRateLimit(request)
+    if (!rateLimitResult.success) {
+      return NextResponse.json(
+        { error: "Too many requests. Please try again later." },
+        { status: 429 }
+      )
+    }
+
+    await requireAdmin()
+
+    await prisma.user.delete({
+      where: { id: params.id }
+    })
+
+    return NextResponse.json({ message: "User deleted successfully" })
+  } catch (error: any) {
+    console.error("Error deleting user:", error)
+    
+    if (error.message === "Authentication required") {
+      return NextResponse.json({ error: "Please sign in" }, { status: 401 })
+    }
+    
+    if (error.message === "Admin access required") {
+      return NextResponse.json({ error: "Admin access required" }, { status: 403 })
+    }
+    
+    if (error.code === 'P2025') {
+      return NextResponse.json({ error: "User not found" }, { status: 404 })
+    }
+    
+    return NextResponse.json({ error: "Failed to delete user" }, { status: 500 })
   }
 }

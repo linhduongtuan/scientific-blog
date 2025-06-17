@@ -1,28 +1,19 @@
-import { NextRequest, NextResponse } from "next/server";
-import { PrismaClient } from '@prisma/client';
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
-
-const globalForPrisma = global as unknown as { prisma: PrismaClient };
-
-export const prisma =
-  globalForPrisma.prisma ||
-  new PrismaClient({
-    log: ['query'],
-  });
-
-if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
+import { NextRequest, NextResponse } from "next/server"
+import { prisma } from "@/app/lib/prisma"
+import { commentSchema } from "@/app/lib/validation"
+import { requireSubscription } from "@/app/lib/auth"
+import { commentRateLimit } from "@/app/lib/rate-limit"
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { postId: string } }
+  { params }: { params: { postid: string } }
 ) {
   try {
-    const { postId } = params;
+    const { postid } = params
 
-    // For now, return an empty array of comments as we don't have a database yet
     const comments = await prisma.comment.findMany({
       where: {
-        postId,
+        postId: postid,
       },
       orderBy: {
         createdAt: "desc",
@@ -36,34 +27,91 @@ export async function GET(
           },
         },
       },
-    });
+    })
 
-    return NextResponse.json(comments);
+    return NextResponse.json(comments)
   } catch (error) {
-    console.error("Error fetching comments:", error);
+    console.error("Error fetching comments:", error)
     return NextResponse.json(
-      { message: "Internal server error" },
+      { error: "Failed to fetch comments" },
       { status: 500 }
-    );
+    )
   }
 }
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { postId: string } }
+  { params }: { params: { postid: string } }
 ) {
   try {
-    // In a real implementation, we would check for auth and subscribed status
-    // For now, return a mock unauthorized response
+    // Apply rate limiting
+    const rateLimitResult = commentRateLimit(req)
+    if (!rateLimitResult.success) {
+      return NextResponse.json(
+        { error: "Too many comments. Please wait before commenting again." },
+        { status: 429 }
+      )
+    }
+
+    // Require authentication and subscription
+    const user = await requireSubscription()
+    
+    const body = await req.json()
+    const { postid } = params
+    
+    // Validate input
+    const validatedData = commentSchema.parse({
+      ...body,
+      postId: postid
+    })
+    
+    // Create comment
+    const comment = await prisma.comment.create({
+      data: {
+        content: validatedData.content,
+        postId: validatedData.postId,
+        userId: user.id,
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            image: true,
+          },
+        },
+      },
+    })
+    
+    return NextResponse.json(comment, { status: 201 })
+    
+  } catch (error: any) {
+    console.error("Error creating comment:", error)
+    
+    if (error.name === 'ZodError') {
+      return NextResponse.json(
+        { error: "Invalid comment data", details: error.errors },
+        { status: 400 }
+      )
+    }
+    
+    if (error.message === "Authentication required") {
+      return NextResponse.json(
+        { error: "Please sign in to comment" },
+        { status: 401 }
+      )
+    }
+    
+    if (error.message === "Subscription required") {
+      return NextResponse.json(
+        { error: "Only subscribed users can comment" },
+        { status: 403 }
+      )
+    }
+    
     return NextResponse.json(
-      { message: "Only subscribed users can comment" },
-      { status: 403 }
-    );
-  } catch (error) {
-    console.error("Error creating comment:", error);
-    return NextResponse.json(
-      { message: "Internal server error" },
+      { error: "Failed to create comment" },
       { status: 500 }
-    );
+    )
   }
 }

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
+import SocialAuthButtons from "@/app/components/SocialAuthButtons";
 
 export default function SignIn() {
   const [email, setEmail] = useState("");

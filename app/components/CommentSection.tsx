@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import Link from "next/link";
+import RichTextEditor from "./RichTextEditor";
 
 export interface User {
   id: string;
@@ -130,14 +131,11 @@ export default function CommentSection({ postId }: { postId: string }) {
               <label htmlFor="comment" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Your comment
               </label>
-              <textarea
-                id="comment"
-                rows={4}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
-                value={comment}
-                onChange={(e) => setComment(e.target.value)}
-                placeholder="Share your thoughts..."
-                required
+              <RichTextEditor
+                content={comment}
+                onChange={setComment}
+                placeholder="Share your thoughts... You can use formatting!"
+                className="min-h-[120px]"
               />
             </div>
             <button

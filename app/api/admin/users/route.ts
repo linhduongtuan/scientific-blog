@@ -1,71 +1,107 @@
-import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth/next";
-import { PrismaClient } from '@prisma/client';
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
-
-// Add prisma to the NodeJS global type
-declare global {
-  var prisma: PrismaClient | undefined;
-}
-
-// PrismaClient is attached to the `global` object in development to prevent
-// exhausting your database connection limit.
-export const prisma = global.prisma || new PrismaClient();
-
-if (process.env.NODE_ENV !== 'production') global.prisma = prisma;
-
-// Extend the next-auth session types
-declare module "next-auth" {
-  interface Session {
-    user?: {
-      id?: string;
-      name?: string;
-      email?: string;
-      image?: string;
-      role?: string;
-      subscribed?: boolean;
-    }
-  }
-}
+import { NextRequest, NextResponse } from "next/server"
+import { prisma } from "@/app/lib/prisma"
+import { requireAdmin } from "@/app/lib/auth"
+import { apiRateLimit } from "@/app/lib/rate-limit"
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions) as {
-      user?: {
-        id?: string;
-        name?: string;
-        email?: string;
-        image?: string;
-        role?: string;
-        subscribed?: boolean;
-      }
-    } | null;
-
-    if (!session || !session.user || session.user.role !== "ADMIN") {
+    // Apply rate limiting
+    const rateLimitResult = apiRateLimit(request)
+    if (!rateLimitResult.success) {
       return NextResponse.json(
-        { message: "Unauthorized" },
-        { status: 403 }
-      );
+        { error: "Too many requests. Please try again later." },
+        { status: 429 }
+      )
     }
 
-    const users = await prisma.user.findMany({
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        emailVerified: true,
-        role: true,
-        subscribed: true,
-        createdAt: true,
-      },
-    });
+    // Require admin authentication
+    await requireAdmin()
 
-    return NextResponse.json(users);
-  } catch (error) {
-    console.error("Error fetching users:", error);
+    const { searchParams } = new URL(request.url)
+    const page = parseInt(searchParams.get('page') || '1')
+    const limit = parseInt(searchParams.get('limit') || '10')
+    const search = searchParams.get('search') || ''
+    const role = searchParams.get('role') || ''
+    const subscribed = searchParams.get('subscribed')
+
+    const offset = (page - 1) * limit
+
+    // Build where clause
+    const where: any = {}
+    
+    if (search) {
+      where.OR = [
+        { name: { contains: search, mode: 'insensitive' } },
+        { email: { contains: search, mode: 'insensitive' } }
+      ]
+    }
+    
+    if (role) {
+      where.role = role
+    }
+    
+    if (subscribed !== null && subscribed !== '') {
+      where.subscribed = subscribed === 'true'
+    }
+
+    // Get users with pagination
+    const [users, total] = await Promise.all([
+      prisma.user.findMany({
+        where,
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          emailVerified: true,
+          role: true,
+          subscribed: true,
+          createdAt: true,
+          updatedAt: true,
+          _count: {
+            select: {
+              comments: true
+            }
+          }
+        },
+        orderBy: {
+          createdAt: 'desc'
+        },
+        skip: offset,
+        take: limit
+      }),
+      prisma.user.count({ where })
+    ])
+
+    return NextResponse.json({
+      users,
+      pagination: {
+        page,
+        limit,
+        total,
+        pages: Math.ceil(total / limit),
+        hasMore: offset + limit < total
+      }
+    })
+  } catch (error: any) {
+    console.error("Error fetching users:", error)
+    
+    if (error.message === "Authentication required") {
+      return NextResponse.json(
+        { error: "Please sign in" },
+        { status: 401 }
+      )
+    }
+    
+    if (error.message === "Admin access required") {
+      return NextResponse.json(
+        { error: "Admin access required" },
+        { status: 403 }
+      )
+    }
+    
     return NextResponse.json(
-      { message: "Internal server error" },
+      { error: "Failed to fetch users" },
       { status: 500 }
-    );
+    )
   }
 }
