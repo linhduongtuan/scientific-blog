@@ -1,7 +1,7 @@
 {
-  "name": "Scientific Blog",
+  "name": "Scientific Blog - Linh Duong Tuan",
   "short_name": "SciBlog",
-  "description": "A blog about scientific computing, research, and data science",
+  "description": "A blog about scientific computing, research, and data science by Linh Duong Tuan",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",

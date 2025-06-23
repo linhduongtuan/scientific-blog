@@ -7,8 +7,25 @@ import './globals.css'
 import Navigation from './components/Navigation'
 
 export const metadata: Metadata = {
-  title: 'Scientific Blog',
-  description: 'A blog about scientific computing, research, and data science',
+  title: 'Scientific Blog - Linh Duong Tuan',
+  description: 'A blog about scientific computing, research, and data science by Linh Duong Tuan',
+  icons: {
+    icon: [
+      { url: '/favicon.svg', type: 'image/svg+xml' },
+      { url: '/favicon.ico', sizes: '16x16', type: 'image/x-icon' },
+      { url: '/icons/icon-32x32.png', sizes: '32x32', type: 'image/png' },
+      { url: '/icons/icon-96x96.png', sizes: '96x96', type: 'image/png' },
+      { url: '/icons/icon-192x192.png', sizes: '192x192', type: 'image/png' },
+    ],
+    apple: [
+      { url: '/icons/icon-152x152.png', sizes: '152x152', type: 'image/png' },
+      { url: '/icons/icon-192x192.png', sizes: '192x192', type: 'image/png' },
+    ],
+    other: [
+      { rel: 'mask-icon', url: '/favicon.ico' }
+    ]
+  },
+  manifest: '/manifest.json',
 }
 
 export default function RootLayout({
