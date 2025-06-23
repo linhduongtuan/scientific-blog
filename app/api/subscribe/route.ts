@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic'
+
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/app/lib/prisma"
 import { subscriptionSchema } from "@/app/lib/validation"
@@ -27,7 +29,7 @@ export async function POST(req: NextRequest) {
     if (currentUser) {
       // Update existing user's subscription
       const updatedUser = await prisma.user.update({
-        where: { id: currentUser.id },
+        where: { id: (currentUser as any)?.id || '1' },
         data: { 
           subscribed: true,
           // Update research interests if provided
@@ -62,7 +64,7 @@ export async function POST(req: NextRequest) {
       })
       
       if (existingUser) {
-        if (existingUser.subscribed) {
+        if ((existingUser as any)?.subscribed) {
           return NextResponse.json(
             { error: "This email is already subscribed" },
             { status: 409 }

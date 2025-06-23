@@ -6,7 +6,8 @@ import { signIn, signOut, useSession } from 'next-auth/react'
 
 export default function TestPage() {
   const { user, status, signin, signup, signout } = useAuth()
-  const { data: session } = useSession()
+  const session = useSession()
+  const sessionData = session?.data || null
   const [testResults, setTestResults] = useState<string[]>([])
   const [isLoading, setIsLoading] = useState(false)
 
@@ -199,12 +200,12 @@ export default function TestPage() {
         <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border">
           <h3 className="font-semibold mb-2 dark:text-white">NextAuth Session</h3>
           <p className="text-sm text-gray-600 dark:text-gray-400">
-            Status: <span className="font-medium">{session ? 'Active' : 'None'}</span>
+            Status: <span className="font-medium">{sessionData ? 'Active' : 'None'}</span>
           </p>
-          {session?.user && (
+          {sessionData?.user && (
             <div className="mt-2 text-sm">
-              <p>Email: {session.user.email}</p>
-              <p>Name: {session.user.name}</p>
+              <p>Email: {sessionData.user.email}</p>
+              <p>Name: {sessionData.user.name}</p>
             </div>
           )}
         </div>

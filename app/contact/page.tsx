@@ -87,24 +87,23 @@ export default function Contact() {
           <div className="space-y-6 mb-8">
             <div>
               <h3 className="text-lg font-semibold mb-1 dark:text-white">Email</h3>
-              <p className="text-gray-700 dark:text-gray-300">research@linhduong.com</p>
+              <p className="text-gray-700 dark:text-gray-300">linhdt@kth.se</p>
             </div>
             
             <div>
               <h3 className="text-lg font-semibold mb-1 dark:text-white">Office Location</h3>
               <p className="text-gray-700 dark:text-gray-300">
-                Research Center for Machine Learning<br />
-                University of Technology<br />
-                Building A, Office 405<br />
-                City, Country
+                KTH Royal Institute of Technology<br />
+                School of Engineering Sciences in Chemistry, Biotechnology and Health<br />
+                Stockholm, Sweden
               </p>
             </div>
             
             <div>
               <h3 className="text-lg font-semibold mb-1 dark:text-white">Office Hours</h3>
               <p className="text-gray-700 dark:text-gray-300">
-                Tuesday & Thursday: 10:00 AM - 12:00 PM<br />
-                Or by appointment (virtual meetings available)
+                By appointment (virtual meetings available)<br />
+                Time zone: Central European Time (CET/CEST)
               </p>
             </div>
             
@@ -123,16 +122,16 @@ export default function Contact() {
                     <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
                   </svg>
                 </a>
-                <a href="https://twitter.com/linhduongtuan" target="_blank" rel="noopener noreferrer" className="text-gray-700 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white">
-                  <span className="sr-only">Twitter</span>
-                  <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M8.29 20.251c7.547 0 11.675-6.253 11.675-11.675 0-.178 0-.355-.012-.53A8.348 8.348 0 0022 5.92a8.19 8.19 0 01-2.357.646 4.118 4.118 0 001.804-2.27 8.224 8.224 0 01-2.605.996 4.107 4.107 0 00-6.993 3.743 11.65 11.65 0 01-8.457-4.287 4.106 4.106 0 001.27 5.477A4.072 4.072 0 012.8 9.713v.052a4.105 4.105 0 003.292 4.022 4.095 4.095 0 01-1.853.07 4.108 4.108 0 003.834 2.85A8.233 8.233 0 012 18.407a11.616 11.616 0 006.29 1.84" />
-                  </svg>
-                </a>
-                <a href="https://scholar.google.com/citations?user=linhduongtuan" target="_blank" rel="noopener noreferrer" className="text-gray-700 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white">
+                <a href="https://scholar.google.com/citations?user=aZKRy1oAAAAJ&hl=en" target="_blank" rel="noopener noreferrer" className="text-gray-700 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white">
                   <span className="sr-only">Google Scholar</span>
                   <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path d="M5.242 13.769L0 9.5 12 0l12 9.5-5.242 4.269C17.548 11.249 14.978 9.5 12 9.5c-2.977 0-5.548 1.748-6.758 4.269zM12 10a7 7 0 1 0 0 14 7 7 0 0 0 0-14z" />
+                  </svg>
+                </a>
+                <a href="https://orcid.org/0000-0001-7411-1369" target="_blank" rel="noopener noreferrer" className="text-gray-700 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white">
+                  <span className="sr-only">ORCID</span>
+                  <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M12 0C5.372 0 0 5.372 0 12s5.372 12 12 12 12-5.372 12-12S18.628 0 12 0zM7.369 4.378c.525 0 .947.431.947.947 0 .525-.422.947-.947.947-.525 0-.946-.422-.946-.947 0-.525.421-.947.946-.947zm-.722 3.038h1.444v10.041H6.647V7.416zm3.562 0h3.9c3.712 0 5.344 2.653 5.344 5.025 0 2.578-1.016 5.016-4.72 5.016h-4.525V7.416zm1.444 1.303v7.444h2.297c2.272 0 3.272-1.272 3.272-3.722s-1.297-3.722-3.584-3.722h-1.985z"/>
                   </svg>
                 </a>
               </div>
@@ -142,12 +141,12 @@ export default function Contact() {
           <div className="p-6 bg-gray-50 dark:bg-gray-800 rounded-lg">
             <h3 className="text-lg font-semibold mb-3 dark:text-white">Available For</h3>
             <ul className="space-y-2 text-gray-700 dark:text-gray-300">
-              <li>• Research Collaborations</li>
-              <li>• Speaking Engagements & Workshops</li>
-              <li>• PhD/MSc Student Supervision</li>
-              <li>• Technical Consulting Projects</li>
-              <li>• Expert Review & Analysis</li>
-              <li>• Advisory Roles in ML/AI</li>
+              <li>• Research Collaborations in Medical AI</li>
+              <li>• Speaking Engagements & Technical Workshops</li>
+              <li>• PhD/MSc Student Supervision (Computational Biology)</li>
+              <li>• Medical AI Consulting Projects</li>
+              <li>• Peer Review & Technical Assessment</li>
+              <li>• Open Source Project Collaboration</li>
             </ul>
           </div>
         </div>

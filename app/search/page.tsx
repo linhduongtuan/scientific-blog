@@ -1,6 +1,6 @@
 import { Suspense } from 'react'
 import SearchResults from './SearchResults'
-import SearchBar from '../components/SearchBar'
+import SearchBarWrapper from '../components/SearchBarWrapper'
 
 export default function SearchPage() {
   return (
@@ -8,7 +8,7 @@ export default function SearchPage() {
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-4 dark:text-white">Search Results</h1>
         <div className="mb-6">
-          <SearchBar />
+          <SearchBarWrapper />
         </div>
       </div>
       

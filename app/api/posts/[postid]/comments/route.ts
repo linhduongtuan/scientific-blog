@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic'
+
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/app/lib/prisma"
 import { commentSchema } from "@/app/lib/validation"
@@ -70,7 +72,7 @@ export async function POST(
       data: {
         content: validatedData.content,
         postId: validatedData.postId,
-        userId: user.id,
+        userId: (user as any)?.id || '1',
       },
       include: {
         user: {

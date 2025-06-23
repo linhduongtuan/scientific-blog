@@ -57,7 +57,7 @@ export default function SocialShare({ title, url, excerpt }: SocialShareProps) {
       <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Share:</span>
       
       {/* Native Share (mobile) */}
-      {typeof navigator !== 'undefined' && navigator.share && (
+      {typeof navigator !== 'undefined' && typeof navigator.share === 'function' && (
         <button
           onClick={nativeShare}
           className="p-2 text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"

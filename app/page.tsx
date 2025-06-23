@@ -8,15 +8,15 @@ export default function Home() {
         <div className="flex flex-col md:flex-row items-center">
           <div className="md:w-1/2 md:pr-12">
             <h1 className="text-4xl md:text-5xl font-bold text-gray-800 dark:text-gray-100 mb-4">
-              Linh Duong
+              Linh T. Duong
             </h1>
             <h2 className="text-2xl md:text-3xl text-gray-600 dark:text-gray-300 mb-6">
-              Scientific Researcher & Developer
+              PhD in Medical Microbiology & ML Researcher
             </h2>
             <p className="text-lg text-gray-700 dark:text-gray-300 mb-8">
-              Welcome to my personal website! I'm a researcher and developer specializing in 
-              machine learning, data science, and scientific computing. Here you'll find my 
-              latest research, publications, and thoughts on emerging technologies.
+              Welcome to my personal website! I'm a researcher with a PhD in medical microbiology from the University of Greifswald, Germany, 
+              currently at KTH Royal Institute of Technology in Stockholm. I specialize in computational biology, medical microbiology, 
+              machine learning, and epidemiology. Explore my research, publications, and open-source contributions.
             </p>
             <div className="flex flex-wrap gap-4">
               <Link href="/about" className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-md transition-colors">
@@ -29,10 +29,11 @@ export default function Home() {
           </div>
           <div className="md:w-1/2 mt-10 md:mt-0">
             <div className="relative w-64 h-64 md:w-80 md:h-80 mx-auto rounded-full overflow-hidden border-4 border-white dark:border-gray-800 shadow-lg">
-              <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-600 opacity-70"></div>
-              <div className="absolute inset-0 flex items-center justify-center text-white text-2xl font-bold">
-                Your Photo Here
-              </div>
+              <img 
+                src="https://avatars.githubusercontent.com/u/22388092?v=4" 
+                alt="Linh T. Duong"
+                className="w-full h-full object-cover"
+              />
             </div>
           </div>
         </div>
@@ -45,18 +46,18 @@ export default function Home() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {[
               {
-                title: "Machine Learning",
-                description: "Exploring advanced ML techniques with applications in computer vision and natural language processing.",
+                title: "Medical Microbiology",
+                description: "Researching microbial pathogenesis, antibiotic resistance, and diagnostic methods using computational approaches.",
+                icon: "�"
+              },
+              {
+                title: "Machine Learning & AI",
+                description: "Applying deep learning to medical imaging, disease diagnosis, and biological data analysis using PyTorch and TensorFlow.",
                 icon: "🧠"
               },
               {
-                title: "Data Science",
-                description: "Analyzing complex datasets to extract meaningful insights and patterns using statistical methods.",
-                icon: "📊"
-              },
-              {
-                title: "Scientific Computing",
-                description: "Developing computational methods to solve scientific problems across various domains.",
+                title: "Computational Biology",
+                description: "Developing computational methods for genomics, epidemiology, and human genetics research.",
                 icon: "🔬"
               }
             ].map((item, index) => (
@@ -82,22 +83,22 @@ export default function Home() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {[
               {
-                title: "Understanding Transformer Models in Natural Language Processing",
-                date: "May 10, 2025",
-                excerpt: "An in-depth look at how transformer models have revolutionized NLP tasks.",
-                slug: "understanding-transformers"
-              },
-              {
-                title: "Practical Applications of Machine Learning in Healthcare",
-                date: "April 22, 2025",
-                excerpt: "Exploring how ML is being used to improve patient outcomes and healthcare efficiency.",
-                slug: "ml-in-healthcare"
-              },
-              {
-                title: "Getting Started with Scientific Python",
+                title: "Deep Learning for Tuberculosis Detection in Chest X-rays",
                 date: "March 15, 2025",
-                excerpt: "A comprehensive guide to setting up a Python environment for scientific computing.",
-                slug: "scientific-python-guide"
+                excerpt: "How we used EfficientNet and PyTorch to achieve state-of-the-art TB detection accuracy in medical imaging.",
+                slug: "tuberculosis-detection-chest-xray"
+              },
+              {
+                title: "BLOOM-LoRA: Fine-tuning Large Language Models for Medical Applications",
+                date: "February 22, 2025",
+                excerpt: "Exploring parameter-efficient fine-tuning of BLOOM models for medical dialogue and diagnosis assistance.",
+                slug: "bloom-lora-medical-llm"
+              },
+              {
+                title: "Graph Neural Networks for ECG Signal Classification",
+                date: "January 10, 2025",
+                excerpt: "A novel approach combining edge detection and GNNs for accurate electrocardiogram signal analysis.",
+                slug: "graph-ecg-classification"
               }
             ].map((post, index) => (
               <div key={index} className="bg-white dark:bg-gray-700 rounded-lg overflow-hidden shadow-md">

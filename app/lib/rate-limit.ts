@@ -15,11 +15,11 @@ export function rateLimit(config: RateLimitConfig) {
     const windowStart = now - config.windowMs
 
     // Clean up old entries
-    for (const [key, value] of requestCounts.entries()) {
+    Array.from(requestCounts.entries()).forEach(([key, value]) => {
       if (value.resetTime < now) {
         requestCounts.delete(key)
       }
-    }
+    })
 
     const current = requestCounts.get(ip)
     

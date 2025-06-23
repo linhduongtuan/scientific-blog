@@ -119,7 +119,7 @@ export default async function BlogPost({ params }: { params: { slug: string } })
       <RelatedPosts 
         currentSlug={post.slug}
         currentTags={post.tags || []}
-        allPosts={allPosts}
+        allPosts={allPosts as any}
       />
       
             {/* Last updated information */}

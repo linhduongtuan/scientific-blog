@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
-import { useNotifications } from "@/app/components/NotificationSystem";
+import { useNotifications } from "@/contexts/NotificationContext";
 import RichTextEditor from "@/app/components/RichTextEditor";
 
 interface BlogPost {
@@ -102,8 +102,7 @@ export default function ContentManagement() {
     } catch (error) {
       addNotification({
         type: 'error',
-        title: 'Error',
-        message: 'Failed to fetch posts'
+        message: 'Error: Failed to fetch posts'
       });
     } finally {
       setLoading(false);
@@ -142,8 +141,7 @@ export default function ContentManagement() {
     if (!formData.title || !formData.content) {
       addNotification({
         type: 'error',
-        title: 'Validation Error',
-        message: 'Title and content are required'
+        message: 'Validation Error: Title and content are required'
       });
       return;
     }
@@ -174,15 +172,13 @@ export default function ContentManagement() {
         setPosts(posts.map(p => p.id === selectedPost.id ? postData : p));
         addNotification({
           type: 'success',
-          title: 'Post Updated',
-          message: 'The blog post has been updated successfully'
+          message: 'Post Updated: The blog post has been updated successfully'
         });
       } else {
         setPosts([postData, ...posts]);
         addNotification({
           type: 'success',
-          title: 'Post Created',
-          message: 'New blog post has been created successfully'
+          message: 'Post Created: New blog post has been created successfully'
         });
       }
 
@@ -192,8 +188,7 @@ export default function ContentManagement() {
     } catch (error) {
       addNotification({
         type: 'error',
-        title: 'Save Failed',
-        message: 'Failed to save the post. Please try again.'
+        message: 'Save Failed: Failed to save the post. Please try again.'
       });
     } finally {
       setSaving(false);
@@ -208,14 +203,12 @@ export default function ContentManagement() {
       setPosts(posts.filter(p => p.id !== postId));
       addNotification({
         type: 'success',
-        title: 'Post Deleted',
-        message: 'The blog post has been deleted successfully'
+        message: 'Post Deleted: The blog post has been deleted successfully'
       });
     } catch (error) {
       addNotification({
         type: 'error',
-        title: 'Delete Failed',
-        message: 'Failed to delete the post'
+        message: 'Delete Failed: Failed to delete the post'
       });
     }
   };
@@ -229,14 +222,12 @@ export default function ContentManagement() {
       ));
       addNotification({
         type: 'success',
-        title: `Post ${newStatus === 'published' ? 'Published' : 'Unpublished'}`,
-        message: `The post has been ${newStatus === 'published' ? 'published' : 'moved to draft'}`
+        message: `Post ${newStatus === 'published' ? 'Published' : 'Unpublished'}: The post has been ${newStatus === 'published' ? 'published' : 'moved to draft'}`
       });
     } catch (error) {
       addNotification({
         type: 'error',
-        title: 'Update Failed',
-        message: 'Failed to update post status'
+        message: 'Update Failed: Failed to update post status'
       });
     }
   };

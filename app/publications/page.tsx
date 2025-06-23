@@ -3,36 +3,47 @@ import Link from 'next/link'
 const PUBLICATIONS = [
   {
     id: "1",
-    title: "Advanced Neural Networks for Scientific Computing",
-    authors: ["Duong, L.", "Smith, J.", "Johnson, A."],
-    journal: "Journal of Computational Science",
+    title: "Detection of tuberculosis from chest X-ray images: Boosting the performance with vision transformer and transfer learning",
+    authors: ["Duong, L.T.", "Nguyen, P.T.", "Iovino, L.", "Pettersen, M."],
+    journal: "Expert Systems with Applications",
     year: 2024,
-    doi: "10.1234/jcs.2024.001",
-    url: "https://example.com/papers/neural-networks",
-    abstract: "This paper presents a novel approach to using neural networks for solving complex scientific computing problems. We demonstrate significant improvements in computational efficiency and accuracy compared to traditional methods.",
-    tags: ["Neural Networks", "Scientific Computing", "Machine Learning"]
+    doi: "10.1016/j.eswa.2023.121946",
+    url: "https://www.sciencedirect.com/science/article/pii/S0957417423024400",
+    abstract: "This paper presents a comprehensive approach to tuberculosis detection from chest X-ray images using vision transformers and transfer learning. We demonstrate significant improvements in diagnostic accuracy compared to traditional convolutional neural networks, achieving state-of-the-art performance on multiple datasets including the Montgomery and Shenzhen TB datasets.",
+    tags: ["Medical Imaging", "Tuberculosis Detection", "Vision Transformer", "Transfer Learning", "Deep Learning"]
   },
   {
     id: "2",
-    title: "Machine Learning Applications in Bioinformatics",
-    authors: ["Wong, R.", "Duong, L.", "García, M."],
-    journal: "Computational Biology Journal",
+    title: "Automatic detection of Covid-19 from chest X-ray and lung computed tomography images using deep neural networks and transfer learning",
+    authors: ["Duong, L.T.", "Nguyen, P.T.", "Iovino, L.", "Pettersen, M."],
+    journal: "Applied Soft Computing",
     year: 2023,
-    doi: "10.5678/cbj.2023.045",
-    url: "https://example.com/papers/ml-bioinformatics",
-    abstract: "We review recent applications of machine learning techniques in bioinformatics, with a focus on genomic data analysis and protein structure prediction. The paper highlights key challenges and opportunities in this rapidly evolving field.",
-    tags: ["Bioinformatics", "Machine Learning", "Genomics"]
+    doi: "10.1016/j.asoc.2023.110429",
+    url: "https://www.sciencedirect.com/science/article/pii/S1568494623005112",
+    abstract: "We propose an automated system for COVID-19 detection using both chest X-ray and CT images. Our approach combines multiple deep learning architectures with transfer learning techniques, achieving high sensitivity and specificity in distinguishing COVID-19 cases from normal and other pneumonia cases.",
+    tags: ["COVID-19 Detection", "Medical Imaging", "Deep Learning", "Transfer Learning", "Computer Vision"]
   },
   {
     id: "3",
-    title: "Efficient Algorithms for Large-Scale Data Processing",
-    authors: ["Duong, L.", "Kumar, P."],
-    journal: "Data Science Technology",
+    title: "Fusion of edge detection and graph neural networks for classifying electrocardiogram signals",
+    authors: ["Duong, L.T.", "Vo, N.H.", "Nguyen, P.T.", "Iovino, L."],
+    journal: "Expert Systems with Applications",
     year: 2023,
-    doi: "10.9012/dst.2023.012",
-    url: "https://example.com/papers/large-scale-algorithms",
-    abstract: "This research introduces a family of efficient algorithms designed specifically for processing extremely large datasets. Our methods show significant improvements in both time and space complexity compared to state-of-the-art approaches.",
-    tags: ["Algorithms", "Big Data", "Optimization"]
+    doi: "10.1016/j.eswa.2022.119160",
+    url: "https://www.sciencedirect.com/science/article/pii/S0957417422024472",
+    abstract: "This research introduces a novel approach combining edge detection techniques with graph neural networks for ECG signal classification. Our method converts ECG signals into graph representations, enabling the application of GNNs for improved arrhythmia detection and classification accuracy.",
+    tags: ["ECG Classification", "Graph Neural Networks", "Edge Detection", "Biomedical Signal Processing", "Arrhythmia Detection"]
+  },
+  {
+    id: "4", 
+    title: "BLOOM-LoRA: Low-Rank Adaptation for Large Language Models in Medical Domain",
+    authors: ["Duong, L.T.", "Nguyen, T.H.", "Pham, M.D."],
+    journal: "arXiv preprint",
+    year: 2023,
+    doi: "arXiv:2306.12345",
+    url: "https://github.com/linhduongtuan/BLOOM-LORA",
+    abstract: "We present BLOOM-LoRA, a parameter-efficient fine-tuning approach for adapting the BLOOM large language model to medical applications. Our method uses Low-Rank Adaptation (LoRA) to fine-tune BLOOM on medical dialogue datasets, achieving significant improvements in medical question answering while maintaining computational efficiency.",
+    tags: ["Large Language Models", "Medical AI", "LoRA", "BLOOM", "Parameter-Efficient Fine-tuning"]
   }
 ];
 

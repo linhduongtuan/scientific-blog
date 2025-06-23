@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic'
+
 import { NextRequest, NextResponse } from "next/server"
 import { signUpSchema } from "@/app/lib/validation"
 import { createUser } from "@/app/lib/auth"
@@ -43,7 +45,7 @@ export async function POST(req: NextRequest) {
           id: user.id,
           name: user.name,
           email: user.email,
-          role: user.role
+          role: (user as any).role || 'user'
         }
       },
       { status: 201 }

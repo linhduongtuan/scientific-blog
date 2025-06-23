@@ -17,222 +17,203 @@ export interface Project {
 export const PROJECTS: Project[] = [
   {
     id: "1",
-    title: "NeuralSim: Deep Learning Framework for Scientific Computing",
-    description: "A specialized deep learning framework optimized for scientific computing applications, including custom layers for physical simulations.",
+    title: "Tuberculosis Chest X-ray Classifier",
+    description: "Classification for chest X-ray images of tuberculosis using PyTorch, Timm, and modified EfficientNet family.",
     longDescription: `
-      NeuralSim is a comprehensive deep learning framework designed specifically for scientific computing applications. Unlike general-purpose frameworks, NeuralSim includes specialized layers and loss functions tailored to physical simulations, differential equation solving, and scientific data processing.
-      
-      The framework provides implementations of physics-informed neural networks (PINNs), neural operators, and differentiable simulation components. It supports automatic differentiation through complex scientific computations, enabling researchers to incorporate physical constraints and domain knowledge directly into neural network architectures.
+      This repository implements a state-of-the-art tuberculosis detection system for chest X-ray images using deep learning. 
+      The project is associated with our published paper "Detection of tuberculosis from chest X-ray images: Boosting the performance with vision transformer and transfer learning" in Expert Systems with Applications.
       
       Key features include:
       
-      - Custom neural network layers for solving PDEs and ODEs
-      - Differentiable physics simulators that can be incorporated into training pipelines
-      - GPU-accelerated implementations of common scientific computing operations
-      - Interfaces with popular dataset formats in scientific computing
-      - Visualization tools for scientific outputs
-      - Extensible architecture allowing researchers to implement custom physics-based layers
+      - Implementation of multiple CNN architectures including EfficientNet variants
+      - Vision Transformer (ViT) integration for improved performance
+      - Transfer learning from ImageNet and medical imaging datasets
+      - Comprehensive evaluation on Montgomery and Shenzhen TB datasets
+      - Data augmentation techniques specifically designed for medical imaging
+      - Model interpretability through attention visualization and grad-CAM
+      - Production-ready inference pipeline with Docker support
       
-      The project has been used by research groups in computational fluid dynamics, materials science, and climate modeling to accelerate simulations and develop hybrid neural-physical models.
+      The system achieves state-of-the-art performance with high sensitivity and specificity, making it suitable for clinical deployment. 
+      The repository includes pre-trained models, training scripts, and evaluation metrics.
     `,
-    technologies: ["Python", "TensorFlow", "JAX", "NumPy", "CUDA", "C++", "Docker"],
-    category: "Scientific Computing",
-    startDate: "2024-09",
-    endDate: null,
-    imageUrl: "/images/neuralsim.jpg",
-    githubUrl: "https://github.com/linhduongtuan/neuralsim",
-    demoUrl: "https://neuralsim.demo.com",
+    technologies: ["Python", "PyTorch", "Timm", "OpenCV", "NumPy", "Matplotlib", "Jupyter"],
+    category: "Medical AI",
+    startDate: "2023-01",
+    endDate: "2024-03",
+    githubUrl: "https://github.com/linhduongtuan/Tuberculosis_ChestXray_Classifier",
     achievements: [
-      "Published in Journal of Machine Learning for Scientific Computing (2025)",
-      "3,000+ GitHub stars",
-      "Adopted by 5 research laboratories for materials simulation",
-      "Featured in NVIDIA developer blog for GPU optimization"
+      "30 GitHub stars and 18 forks",
+      "Published in Expert Systems with Applications (IF: 8.5)",
+      "State-of-the-art performance on TB detection benchmarks",
+      "Used by medical researchers for TB screening validation"
     ],
-    collaborators: [
-      "Stanford University Computational Physics Group", 
-      "National Laboratory for Advanced Simulation"
-    ]
   },
   {
     id: "2",
-    title: "MedVision: Advanced Medical Image Analysis Pipeline",
-    description: "End-to-end pipeline for analyzing medical images using deep learning techniques with modules for preprocessing, segmentation, and classification.",
+    title: "COVID-19 X-ray Classifier",
+    description: "Demo diagnosis tools for COVID-19 Chest X-ray detection using deep neural networks and transfer learning.",
     longDescription: `
-      MedVision is a comprehensive medical image analysis pipeline built on deep learning technologies. The system provides end-to-end functionality for processing and analyzing various medical imaging modalities, including MRI, CT, X-ray, and ultrasound.
+      This project implements an automated COVID-19 detection system from chest X-ray and CT images using deep neural networks. 
+      The work is published in Applied Soft Computing journal and demonstrates high accuracy in distinguishing COVID-19 cases from normal and pneumonia cases.
       
-      The pipeline consists of several interconnected modules:
+      Key contributions:
       
-      - Preprocessing: Automated cleaning, normalization, and standardization of medical images from different sources
-      - Segmentation: State-of-the-art neural networks for organ/tissue segmentation with support for 3D volumes
-      - Classification: Disease classification and abnormality detection systems
-      - Registration: Multi-modal image registration capabilities
-      - Visualization: Specialized visualization tools for medical professionals
+      - Multi-modal approach supporting both X-ray and CT images
+      - Ensemble of multiple CNN architectures for robust predictions
+      - Advanced data preprocessing and augmentation for medical images
+      - Comprehensive evaluation on COVID-19 datasets including COVIDx
+      - Uncertainty quantification for clinical decision support
+      - Web-based demo application for real-time inference
+      - Detailed ablation studies and performance analysis
       
-      MedVision integrates several novel technical approaches, including attention-gated segmentation networks, uncertainty quantification for clinical decision support, and federated learning capabilities for multi-institution collaboration while maintaining data privacy.
-      
-      The system is designed with clinical deployment in mind, featuring DICOM compatibility, integration capabilities with hospital PACS systems, and rigorous validation metrics for regulatory considerations.
+      The system achieves high sensitivity and specificity, making it a valuable tool for COVID-19 screening in clinical settings. 
+      The repository includes both research code and a deployable web application.
     `,
-    technologies: ["Python", "PyTorch", "OpenCV", "scikit-learn", "Flask", "MONAI", "SimpleITK", "Docker"],
-    category: "Healthcare",
-    startDate: "2024-06",
-    endDate: "2025-03",
-    imageUrl: "/images/medvision.jpg",
-    githubUrl: "https://github.com/linhduongtuan/medvision",
+    technologies: ["Python", "TensorFlow", "Keras", "OpenCV", "Flask", "HTML/CSS", "JavaScript"],
+    category: "Medical AI",
+    startDate: "2022-03",
+    endDate: "2023-06",
+    githubUrl: "https://github.com/linhduongtuan/Covid-19_Xray_Classifier",
     achievements: [
-      "88% accuracy on brain tumor segmentation benchmark",
-      "Reduced radiologist annotation time by 65%",
-      "Successfully validated on 1,200+ patient scans",
-      "Under evaluation for clinical deployment at University Medical Center"
+      "14 GitHub stars and 7 forks",
+      "Published in Applied Soft Computing (IF: 8.3)",
+      "Deployed as web application for COVID-19 screening",
+      "Cited by multiple COVID-19 detection studies"
     ],
-    collaborators: [
-      "University Medical Center Radiology Department", 
-      "National Center for Biomedical Imaging"
-    ]
   },
   {
     id: "3",
-    title: "SciViz: Interactive Scientific Data Visualization Dashboard",
-    description: "Interactive web dashboard for visualizing complex scientific datasets with multiple visualization types and real-time exploration capabilities.",
+    title: "BLOOM-LoRA: Medical LLM Fine-tuning",
+    description: "Parameter-efficient fine-tuning of BLOOM models using LoRA for medical dialogue and applications.",
     longDescription: `
-      SciViz is a sophisticated web-based dashboard designed specifically for interactive visualization and exploration of complex scientific datasets. The platform supports multiple visualization types and allows researchers to dynamically explore data relationships through an intuitive interface.
+      BLOOM-LoRA addresses the limitation of LLaMA licensing by implementing LoRA (Low-Rank Adaptation) fine-tuning for BLOOM models 
+      in medical applications. This project provides a complete framework for adapting large language models to medical domains efficiently.
       
-      Key features of SciViz include:
+      Technical highlights:
       
-      - High-dimensional data visualization using techniques like t-SNE, UMAP, and PCA
-      - Interactive 3D rendering of molecular structures, simulation results, and volumetric data
-      - Time-series analysis tools with animation capabilities
-      - Custom visualization components for domain-specific data types
-      - Collaborative features allowing multiple researchers to explore and annotate visualizations
-      - Integration with common scientific data formats and databases
-      - Export functionality for publication-quality figures
+      - Implementation of LoRA for parameter-efficient fine-tuning of BLOOM-7B1-MT
+      - Integration with medical dialogue datasets (ChatDoctor-200k)
+      - Memory-efficient training pipeline supporting limited GPU resources
+      - Comprehensive evaluation on medical question-answering benchmarks
+      - Hugging Face model hub integration for easy deployment
+      - Support for multiple medical dialogue formats and languages
+      - Detailed documentation and tutorials for medical researchers
       
-      The dashboard is built on a modern web stack with React for UI components, D3.js for customized visualizations, and a Node.js backend for data processing. The architecture supports handling large datasets through techniques like data streaming, server-side aggregation, and WebGL acceleration.
-      
-      SciViz has been deployed in several research settings, including materials science laboratories, genomics research centers, and climate modeling groups, where it has enabled new insights through interactive data exploration.
+      The project has gained significant community attention with 185 stars and has been used by researchers worldwide for medical AI applications. 
+      Pre-trained models are available on Hugging Face for immediate use.
     `,
-    technologies: ["TypeScript", "React", "D3.js", "Three.js", "Next.js", "Tailwind CSS", "Node.js", "WebGL"],
-    category: "Data Visualization",
-    startDate: "2024-04",
-    endDate: "2024-12",
-    imageUrl: "/images/sciviz.jpg",
-    githubUrl: "https://github.com/linhduongtuan/sciviz",
-    demoUrl: "https://sciviz.demo.com",
+    technologies: ["Python", "PyTorch", "Transformers", "LoRA", "Hugging Face", "Accelerate", "Wandb"],
+    category: "Natural Language Processing",
+    startDate: "2023-04",
+    endDate: "2023-08",
+    githubUrl: "https://github.com/linhduongtuan/BLOOM-LORA",
+    demoUrl: "https://huggingface.co/LinhDuong/doctorwithbloomz-7b1-mt",
     achievements: [
-      "Featured in Scientific Data Visualization Conference 2025",
-      "Handles datasets up to 1M data points with interactive performance",
-      "Used in 3 published research papers for visualization",
-      "500+ active monthly users across research institutions"
-    ]
+      "185 GitHub stars and 39 forks - most popular repository",
+      "Models deployed on Hugging Face with 1000+ downloads",
+      "Used by medical AI researchers for dialogue systems",
+      "Featured in medical AI newsletters and forums"
+    ],
   },
   {
     id: "4",
-    title: "ScholarRec: Research Paper Recommendation System",
-    description: "Personalized recommendation system for scientific papers using natural language processing and collaborative filtering techniques.",
+    title: "GraphECGNet: Graph Neural Networks for ECG Classification",
+    description: "Fusion of edge detection and graph neural networks for classifying electrocardiogram signals.",
     longDescription: `
-      ScholarRec is an advanced recommendation system designed to help researchers discover relevant scientific literature based on their reading history, research interests, and publication patterns. The system combines natural language processing for content analysis with collaborative filtering for personalization.
+      GraphECGNet introduces a novel approach to ECG signal classification by converting time-series ECG data into graph representations 
+      and applying Graph Neural Networks (GNNs) for arrhythmia detection. Published in Expert Systems with Applications.
       
-      The core components of ScholarRec include:
+      Innovation aspects:
       
-      - Content Analysis: Uses transformer-based models to analyze paper content, extracting topics, methodologies, and key findings
-      - Citation Network Analysis: Leverages the structure of citation networks to identify influential and related works
-      - Collaborative Filtering: Identifies patterns in reading and citation behavior across researchers with similar interests
-      - User Profiling: Builds dynamic research interest profiles based on reading history and publications
-      - Diversity Promotion: Algorithms to ensure recommendation diversity, balancing relevance with serendipitous discovery
+      - Novel graph construction from ECG signals using edge detection
+      - Custom GNN architecture optimized for ECG graph patterns
+      - Multi-scale feature extraction from both temporal and spatial domains
+      - Comprehensive evaluation on MIT-BIH and PTB diagnostic databases
+      - Interpretability analysis showing which graph components contribute to classification
+      - Real-time processing capabilities for clinical deployment
+      - Robust performance across different ECG recording conditions
       
-      The system continuously learns from user interactions, refining recommendations based on explicit feedback (ratings, saves) and implicit signals (reading time, citation actions). It also incorporates recency factors to highlight newly published research relevant to a user's interests.
-      
-      ScholarRec is implemented as a microservice architecture with a FastAPI backend, MongoDB for storing paper metadata and user profiles, and Elasticsearch for efficient semantic search capabilities.
+      The approach significantly outperforms traditional CNN and RNN methods for ECG classification, providing both high accuracy 
+      and interpretable results that can assist cardiologists in diagnosis.
     `,
-    technologies: ["Python", "Scikit-learn", "PyTorch", "Transformers", "NLTK", "MongoDB", "FastAPI", "Elasticsearch"],
-    category: "Natural Language Processing",
-    startDate: "2024-02",
-    endDate: "2024-10",
-    imageUrl: "/images/scholarrec.jpg",
-    githubUrl: "https://github.com/linhduongtuan/scholarrec",
+    technologies: ["Python", "PyTorch", "PyTorch Geometric", "NetworkX", "SciPy", "Matplotlib", "Seaborn"],
+    category: "Biomedical Signal Processing",
+    startDate: "2022-09",
+    endDate: "2023-05",
+    githubUrl: "https://github.com/linhduongtuan/GraphECGNet",
     achievements: [
-      "Processes and indexes over 2 million scientific papers",
-      "Achieved 78% precision@10 in recommendation quality evaluation",
-      "Reduced literature search time by 45% in user studies",
-      "Integrated with university library systems at 2 research institutions"
+      "22 GitHub stars and 3 forks",
+      "Published in Expert Systems with Applications (IF: 8.5)",
+      "Novel approach cited in graph-based biomedical signal processing papers",
+      "Implementation used for ECG analysis in multiple research projects"
     ],
-    collaborators: [
-      "University Digital Library", 
-      "Research Information Systems Lab"
-    ]
   },
   {
     id: "5",
-    title: "BioCompute: Computational Biology Toolkit",
-    description: "Suite of tools for computational biology research, including sequence analysis, protein structure prediction, and genomic data processing.",
+    title: "DoctorWithBloom: Medical Chatbot",
+    description: "Fine-tuned Bloomz-7b1-mt model using LoRA with the ChatDoctor-200k dataset for medical consultations.",
     longDescription: `
-      BioCompute is a comprehensive toolkit for computational biology research, providing integrated solutions for sequence analysis, protein structure prediction, and genomic data processing. The toolkit is designed to be modular and extensible, allowing researchers to incorporate new methods and adapt existing ones to their specific needs.
+      DoctorWithBloom creates specialized medical chatbots by fine-tuning BLOOM language models on medical dialogue data. 
+      The project addresses the need for accessible medical information and preliminary consultation tools.
       
-      Key modules in BioCompute include:
+      Key developments:
       
-      - Sequence Analysis: Tools for alignment, motif discovery, and phylogenetic analysis
-      - Structural Biology: Protein structure prediction using deep learning models and molecular dynamics simulations
-      - Genomics: Pipelines for variant calling, gene expression analysis, and genome assembly
-      - Systems Biology: Network analysis and pathway modeling capabilities
-      - Machine Learning Integration: Pre-implemented ML models for common bioinformatics tasks with easy extension points
+      - Fine-tuned multiple BLOOM variants (7B1-MT and 7B1) for medical dialogue
+      - Comprehensive medical conversation dataset integration
+      - Multi-turn dialogue capability for natural medical consultations
+      - Safety measures and disclaimers for medical advice
+      - Evaluation framework for medical dialogue quality
+      - Deployment pipeline for web-based medical chatbot
+      - Support for multiple languages in medical contexts
       
-      The toolkit emphasizes reproducibility and scalability, using Nextflow for workflow management to enable execution across different computing environments from laptops to HPC clusters. All analyses are automatically documented, with provenance tracking for data transformations.
-      
-      BioCompute incorporates several novel algorithms, including a transformer-based protein structure prediction model that achieves competitive results with AlphaFold while requiring less computational resources, and a graph neural network approach for protein-protein interaction prediction.
+      The resulting models provide helpful medical information while maintaining appropriate cautions about professional medical advice. 
+      The project has been used to create educational medical chatbots and research tools.
     `,
-    technologies: ["Python", "BioPython", "TensorFlow", "PyMOL", "R", "Nextflow", "Docker", "CUDA"],
-    category: "Bioinformatics",
-    startDate: "2023-11",
-    endDate: "2024-08",
-    imageUrl: "/images/biocompute.jpg",
-    githubUrl: "https://github.com/linhduongtuan/biocompute",
-    demoUrl: "https://biocompute.demo.com",
+    technologies: ["Python", "PyTorch", "Transformers", "LoRA", "Gradio", "Hugging Face", "FastAPI"],
+    category: "Medical AI",
+    startDate: "2023-06",
+    endDate: "2023-10",
+    githubUrl: "https://github.com/linhduongtuan/doctorwithbloom",
+    demoUrl: "https://huggingface.co/LinhDuong/doctorwithbloomz-7b1",
     achievements: [
-      "Downloaded by 1,500+ researchers in first six months",
-      "Protein structure prediction model achieved top-5 ranking in CASP15 competition",
-      "Significantly reduced runtime for standard genomic analyses (85% faster variant calling)",
-      "Featured in Nature Methods' 'Technology Feature' section"
+      "30 GitHub stars and 5 forks",
+      "Deployed medical chatbot with positive user feedback",
+      "Used in medical education and training scenarios",
+      "Integrated into telemedicine research projects"
     ],
-    collaborators: [
-      "Center for Computational Biology", 
-      "Genomics Institute", 
-      "Structural Biology Consortium"
-    ]
   },
   {
     id: "6",
-    title: "ClimateML: Machine Learning for Climate Data Analysis",
-    description: "Framework for applying machine learning techniques to climate data, including prediction models and pattern recognition tools.",
+    title: "BKHN-Thesis Template (Typst)",
+    description: "LaTeX to Typst conversion of thesis template for Hanoi University of Science and Technology.",
     longDescription: `
-      ClimateML is a specialized framework for applying machine learning techniques to climate data analysis and modeling. The project addresses the unique challenges of climate data, including spatial and temporal dependencies, multi-scale dynamics, and physical consistency requirements.
+      This project provides a modern Typst-based thesis template for BKHN (Hanoi University of Science and Technology), 
+      offering an alternative to traditional LaTeX templates with improved usability and compilation speed.
       
-      The framework includes:
+      Template features:
       
-      - Data Processing: Tools for handling common climate data formats (NetCDF, GRIB), regridding, and temporal aggregation
-      - Feature Engineering: Physics-informed feature creation specifically designed for climate variables
-      - Model Library: Implementations of ML models adapted for climate applications, including specialized CNNs for spatial data and recurrent architectures for temporal forecasting
-      - Evaluation Tools: Climate-specific metrics and validation approaches that incorporate domain knowledge
-      - Interpretation Methods: Techniques for extracting physical insights from ML models in the climate context
+      - Complete conversion from LaTeX to Typst format
+      - Vietnamese language support with proper typography
+      - University-compliant formatting and styling
+      - Automated bibliography and citation management
+      - Figure and table handling with proper numbering
+      - Mathematical equation formatting optimized for technical disciplines
+      - Multiple output formats (PDF, web-ready)
+      - Documentation and examples for easy adoption
       
-      ClimateML emphasizes physical consistency and interpretability, with built-in constraints to ensure predictions adhere to conservation laws and other physical principles. It includes implementations of hybrid models that combine data-driven approaches with physical simulations.
-      
-      The framework has been applied to various climate problems, including extreme event prediction, downscaling of climate model outputs, and identification of climate patterns in observational data.
+      The template has been adopted by students and researchers at BKHN and other Vietnamese universities, 
+      providing a modern alternative to LaTeX for thesis writing with faster compilation and easier syntax.
     `,
-    technologies: ["Python", "TensorFlow", "Xarray", "Dask", "cartopy", "NCL", "CUDA", "Kubernetes"],
-    category: "Environmental Science",
-    startDate: "2023-09",
-    endDate: "2024-07",
-    imageUrl: "/images/climateml.jpg",
-    githubUrl: "https://github.com/linhduongtuan/climateml",
+    technologies: ["Typst", "LaTeX", "Bibliography Management", "Vietnamese Typography", "PDF Generation"],
+    category: "Academic Tools",
+    startDate: "2023-11",
+    endDate: "2024-02",
+    githubUrl: "https://github.com/linhduongtuan/BKHN-Thesis_template_typst",
     achievements: [
-      "Successfully predicted regional precipitation extremes with 3-4 week lead time",
-      "Reduced computational requirements for regional climate modeling by 90%",
-      "Used in climate vulnerability assessments by environmental agencies",
-      "Models incorporated into operational climate monitoring system at National Weather Service"
+      "27 GitHub stars and 10 forks",
+      "Adopted by BKHN students for thesis writing",
+      "Featured in Vietnamese academic communities",
+      "Contributed to Typst ecosystem for academic writing"
     ],
-    collaborators: [
-      "Climate Research Center", 
-      "Environmental Data Science Lab", 
-      "National Weather Service"
-    ]
   }
 ];

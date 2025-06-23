@@ -1,7 +1,10 @@
+export const dynamic = 'force-dynamic'
+
 import { NextRequest, NextResponse } from "next/server"
 import { searchSchema } from "@/app/lib/validation"
 import { getAllBlogPosts } from "@/app/lib/mdx"
 import { apiRateLimit } from "@/app/lib/rate-limit"
+import { cache } from '@/app/lib/cache'
 
 export async function GET(req: NextRequest) {
   try {

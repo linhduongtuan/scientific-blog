@@ -45,11 +45,11 @@ class MemoryCache {
   // Clean up expired items
   cleanup(): void {
     const now = Date.now()
-    for (const [key, item] of this.cache.entries()) {
+    Array.from(this.cache.entries()).forEach(([key, item]) => {
       if (now - item.timestamp > item.ttl) {
         this.cache.delete(key)
       }
-    }
+    })
   }
 }
 
@@ -86,11 +86,11 @@ export async function getCachedData<T>(
 export function invalidateCache(pattern?: string): void {
   if (pattern) {
     // Delete keys matching pattern
-    for (const key of cache['cache'].keys()) {
+    Array.from(cache['cache'].keys()).forEach(key => {
       if (key.includes(pattern)) {
         cache.delete(key)
       }
-    }
+    })
   } else {
     cache.clear()
   }

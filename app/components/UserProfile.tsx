@@ -2,7 +2,7 @@
 
 import { useState, useRef } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
-import { useNotifications } from './NotificationSystem'
+import { useNotifications } from '@/contexts/NotificationContext'
 
 interface UserProfileProps {
   user: {
@@ -38,8 +38,7 @@ export default function UserProfile({ user, onUpdate }: UserProfileProps) {
     if (file.size > 5 * 1024 * 1024) { // 5MB limit
       addNotification({
         type: 'error',
-        title: 'File too large',
-        message: 'Please select an image smaller than 5MB'
+        message: 'File too large: Please select an image smaller than 5MB'
       })
       return
     }
@@ -53,16 +52,14 @@ export default function UserProfile({ user, onUpdate }: UserProfileProps) {
       
       addNotification({
         type: 'success',
-        title: 'Profile photo updated',
-        message: 'Your profile photo has been updated successfully'
+        message: 'Profile photo updated successfully'
       })
       
       onUpdate?.()
     } catch (error) {
       addNotification({
         type: 'error',
-        title: 'Upload failed',
-        message: 'Failed to upload profile photo. Please try again.'
+        message: 'Upload failed: Failed to upload profile photo. Please try again.'
       })
     } finally {
       setIsUploading(false)
@@ -77,16 +74,14 @@ export default function UserProfile({ user, onUpdate }: UserProfileProps) {
       setIsEditing(false)
       addNotification({
         type: 'success',
-        title: 'Profile updated',
-        message: 'Your profile has been updated successfully'
+        message: 'Profile updated: Your profile has been updated successfully'
       })
       
       onUpdate?.()
     } catch (error) {
       addNotification({
         type: 'error',
-        title: 'Update failed',
-        message: 'Failed to update profile. Please try again.'
+        message: 'Update failed: Failed to update profile. Please try again.'
       })
     }
   }

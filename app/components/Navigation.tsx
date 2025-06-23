@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import DarkModeToggle from './DarkModeToggle'
 import SubscriptionForm from './SubscriptionForm'
-import SearchBar from './SearchBar'
+import SearchBarWrapper from './SearchBarWrapper'
 
 export default function Navigation() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
@@ -27,6 +27,7 @@ export default function Navigation() {
     { name: 'Blog', href: '/blog' },
     { name: 'Projects', href: '/projects' },
     { name: 'Publications', href: '/publications' },
+    { name: 'Dashboard', href: '/dashboard' },
     { name: 'Contact', href: '/contact' },
   ]
   
@@ -60,7 +61,7 @@ export default function Navigation() {
           {/* Desktop search and buttons */}
           <div className="hidden sm:ml-6 sm:flex sm:items-center space-x-4">
             <div className="w-64">
-              <SearchBar />
+              <SearchBarWrapper />
             </div>
             <button
               onClick={() => setShowSubscribeModal(true)}
