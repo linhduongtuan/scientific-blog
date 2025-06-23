@@ -13,6 +13,39 @@ export interface BlogPost {
 
 export const BLOG_POSTS: BlogPost[] = [
   {
+    id: "5",
+    title: "Deep Learning for Tuberculosis Detection in Chest X-rays",
+    date: "2025-06-15",
+    author: "Linh Duong Tuan",
+    excerpt: "Leveraging EfficientNet and advanced data augmentation techniques to achieve 95.8% accuracy in TB detection from chest radiographs.",
+    readingTime: "8 min read",
+    slug: "tuberculosis-detection-chest-xray",
+    tags: ["Deep Learning", "Medical Imaging", "Tuberculosis", "EfficientNet", "Computer Vision"],
+    content: "Coming soon..."
+  },
+  {
+    id: "6",
+    title: "Transformer Networks for Histopathology Image Analysis",
+    date: "2025-05-28",
+    author: "Linh Duong Tuan",
+    excerpt: "Exploring Vision Transformers (ViTs) for automated cancer detection in whole slide images with attention mechanism visualization.",
+    readingTime: "10 min read",
+    slug: "transformers-histopathology-analysis",
+    tags: ["Vision Transformers", "Histopathology", "Cancer Detection", "Attention Mechanisms", "Computational Pathology"],
+    content: "Coming soon..."
+  },
+  {
+    id: "7",
+    title: "Graph Neural Networks for Multi-Modal Medical Data Integration",
+    date: "2025-05-12",
+    author: "Linh Duong Tuan",
+    excerpt: "Novel GNN architecture combining imaging, genomics, and clinical data for personalized cancer treatment prediction.",
+    readingTime: "12 min read",
+    slug: "gnn-multimodal-medical-data",
+    tags: ["Graph Neural Networks", "Multi-Modal", "Medical Data", "Genomics", "Personalized Medicine"],
+    content: "Coming soon..."
+  },
+  {
     id: "1",
     title: "Understanding Transformer Models in Natural Language Processing",
     date: "2025-05-10",

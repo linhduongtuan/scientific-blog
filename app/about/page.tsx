@@ -164,7 +164,7 @@ export default function About() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <p className="font-medium dark:text-white">Email</p>
-            <p className="text-gray-600 dark:text-gray-400">linhdt@kth.se</p>
+            <p className="text-gray-600 dark:text-gray-400">lduong@kth.se</p>
           </div>
           <div>
             <p className="font-medium dark:text-white">Location</p>

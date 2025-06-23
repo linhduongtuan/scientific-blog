@@ -87,7 +87,7 @@ export default function Contact() {
           <div className="space-y-6 mb-8">
             <div>
               <h3 className="text-lg font-semibold mb-1 dark:text-white">Email</h3>
-              <p className="text-gray-700 dark:text-gray-300">linhdt@kth.se</p>
+              <p className="text-gray-700 dark:text-gray-300">lduong@kth.se</p>
             </div>
             
             <div>

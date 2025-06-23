@@ -84,21 +84,21 @@ export default function Home() {
             {[
               {
                 title: "Deep Learning for Tuberculosis Detection in Chest X-rays",
-                date: "March 15, 2025",
-                excerpt: "How we used EfficientNet and PyTorch to achieve state-of-the-art TB detection accuracy in medical imaging.",
+                date: "June 15, 2025",
+                excerpt: "Leveraging EfficientNet and advanced data augmentation techniques to achieve 95.8% accuracy in TB detection from chest radiographs.",
                 slug: "tuberculosis-detection-chest-xray"
               },
               {
-                title: "BLOOM-LoRA: Fine-tuning Large Language Models for Medical Applications",
-                date: "February 22, 2025",
-                excerpt: "Exploring parameter-efficient fine-tuning of BLOOM models for medical dialogue and diagnosis assistance.",
-                slug: "bloom-lora-medical-llm"
+                title: "Transformer Networks for Histopathology Image Analysis",
+                date: "May 28, 2025",
+                excerpt: "Exploring Vision Transformers (ViTs) for automated cancer detection in whole slide images with attention mechanism visualization.",
+                slug: "transformers-histopathology-analysis"
               },
               {
-                title: "Graph Neural Networks for ECG Signal Classification",
-                date: "January 10, 2025",
-                excerpt: "A novel approach combining edge detection and GNNs for accurate electrocardiogram signal analysis.",
-                slug: "graph-ecg-classification"
+                title: "Graph Neural Networks for Multi-Modal Medical Data Integration",
+                date: "May 12, 2025",
+                excerpt: "Novel GNN architecture combining imaging, genomics, and clinical data for personalized cancer treatment prediction.",
+                slug: "gnn-multimodal-medical-data"
               }
             ].map((post, index) => (
               <div key={index} className="bg-white dark:bg-gray-700 rounded-lg overflow-hidden shadow-md">
