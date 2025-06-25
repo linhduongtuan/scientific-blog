@@ -16,11 +16,9 @@ export default function MathRenderer({ children, display = false }: MathRenderer
       const script = document.createElement('script')
       script.src = 'https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js'
       script.onload = () => {
-        // @ts-ignore
-        if (window.katex) {
+        if ((window as any).katex) {
           try {
-            // @ts-ignore
-            window.katex.render(children, mathRef.current, {
+            (window as any).katex.render(children, mathRef.current, {
               displayMode: display,
               throwOnError: false,
               trust: true

@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useNotifications } from "@/contexts/NotificationContext";
 
-export default function SubscriptionForm({ onSuccess }: { onSuccess?: () => void }) {
+export default function SubscriptionForm({ onSuccessAction }: { onSuccessAction?: () => void }) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [researchInterests, setResearchInterests] = useState("");
@@ -11,6 +12,7 @@ export default function SubscriptionForm({ onSuccess }: { onSuccess?: () => void
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const { user, status } = useAuth();
+  const { addNotification } = useNotifications();
 
   // Pre-fill with user data if logged in
   useEffect(() => {
@@ -25,40 +27,65 @@ export default function SubscriptionForm({ onSuccess }: { onSuccess?: () => void
     
     if (!name || !email) {
       setError("Please fill in all required fields");
+      addNotification({
+        type: 'error',
+        message: "Please fill in all required fields"
+      });
       return;
     }
     
     setIsSubmitting(true);
     setError("");
+    setSuccess("");
     
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // If user is logged in, update their subscription status
-      if (status === "authenticated" && user) {
-        // In a real app, this would be an API call
-        const updatedUser = { ...user, subscribed: true };
-        localStorage.setItem('scientificBlogUser', JSON.stringify(updatedUser));
+      const response = await fetch('/api/subscribe', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name,
+          email,
+          researchInterests: researchInterests.split(',').map(s => s.trim()).filter(Boolean),
+          subscriptionType: 'free'
+        }),
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        setSuccess(result.message || "Successfully subscribed! Check your email for confirmation.");
+        addNotification({
+          type: 'success',
+          message: result.message || "Successfully subscribed! Check your email for confirmation."
+        });
         
-        // Force page reload to update auth context
-        window.location.reload();
-      }
-      
-      setSuccess("Thank you for subscribing! Check your email for confirmation.");
-      
-      // Clear form
-      if (!user) {
-        setName("");
-        setEmail("");
-      }
-      setResearchInterests("");
-      
-      if (onSuccess) {
-        onSuccess();
+        // Clear form if not logged in
+        if (status !== "authenticated") {
+          setName("");
+          setEmail("");
+        }
+        setResearchInterests("");
+        
+        if (onSuccessAction) {
+          onSuccessAction();
+        }
+      } else {
+        setError(result.error || "Failed to subscribe. Please try again.");
+        addNotification({
+          type: 'error',
+          message: result.error || "Failed to subscribe. Please try again."
+        });
       }
     } catch (err: any) {
-      setError(err.message || "An error occurred");
+      console.error('Subscription error:', err);
+      const errorMessage = "Network error. Please check your connection and try again.";
+      setError(errorMessage);
+      addNotification({
+        type: 'error',
+        message: errorMessage
+      });
     } finally {
       setIsSubmitting(false);
     }

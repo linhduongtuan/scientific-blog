@@ -1,22 +1,18 @@
-
 "use client"
 
 import React, { useState, useRef, useCallback, useEffect } from 'react'
-import { Upload, Download, Ruler, Square, Type, Diff } from 'lucide-react'
+import { Upload, Ruler, Square, Type, Diff } from 'lucide-react'
 
 interface MedicalImageViewerProps {
   onImageLoadAction?: (imageData: any) => void
   onAnnotationChangeAction?: (annotations: any[]) => void
 }
 
-export default function MedicalImageViewer({ onImageLoadAction, onAnnotationChangeAction }: MedicalImageViewerProps) {
+export default function MedicalImageViewerOptimized({ onImageLoadAction, onAnnotationChangeAction }: MedicalImageViewerProps) {
   const [mounted, setMounted] = useState(false)
   const [image, setImage] = useState<string | null>(null)
   const [annotations, setAnnotations] = useState<any[]>([])
   const [currentTool, setCurrentTool] = useState<'measurement' | 'roi' | 'text' | null>(null)
-  const [isDrawing, setIsDrawing] = useState(false)
-  const [startPoint, setStartPoint] = useState<{x: number, y: number} | null>(null)
-  const canvasRef = useRef<HTMLCanvasElement>(null)
   const imageRef = useRef<HTMLImageElement>(null)
 
   useEffect(() => {
@@ -26,12 +22,6 @@ export default function MedicalImageViewer({ onImageLoadAction, onAnnotationChan
   const handleImageUpload = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (file) {
-      // Check if it's a DICOM file
-      if (file.name.toLowerCase().endsWith('.dcm')) {
-        // In a real implementation, you would use a DICOM parser like cornerstone.js
-        console.log('DICOM file detected:', file.name)
-      }
-
       const reader = new FileReader()
       reader.onload = (e) => {
         const imageData = e.target?.result as string
@@ -41,47 +31,6 @@ export default function MedicalImageViewer({ onImageLoadAction, onAnnotationChan
       reader.readAsDataURL(file)
     }
   }, [onImageLoadAction])
-
-  const handleCanvasMouseDown = useCallback((event: React.MouseEvent<HTMLCanvasElement>) => {
-    if (!currentTool) return
-
-    const canvas = canvasRef.current
-    if (!canvas) return
-
-    const rect = canvas.getBoundingClientRect()
-    const x = event.clientX - rect.left
-    const y = event.clientY - rect.top
-
-    setIsDrawing(true)
-    setStartPoint({ x, y })
-  }, [currentTool])
-
-  const handleCanvasMouseUp = useCallback((event: React.MouseEvent<HTMLCanvasElement>) => {
-    if (!isDrawing || !startPoint || !currentTool) return
-
-    const canvas = canvasRef.current
-    if (!canvas) return
-
-    const rect = canvas.getBoundingClientRect()
-    const endX = event.clientX - rect.left
-    const endY = event.clientY - rect.top
-
-    const newAnnotation = {
-      id: Date.now(),
-      type: currentTool,
-      startPoint,
-      endPoint: { x: endX, y: endY },
-      timestamp: new Date().toISOString()
-    }
-
-    const updatedAnnotations = [...annotations, newAnnotation]
-    setAnnotations(updatedAnnotations)
-    onAnnotationChangeAction?.(updatedAnnotations)
-
-    setIsDrawing(false)
-    setStartPoint(null)
-    setCurrentTool(null)
-  }, [isDrawing, startPoint, currentTool, annotations, onAnnotationChangeAction])
 
   if (!mounted) {
     return (
@@ -100,7 +49,7 @@ export default function MedicalImageViewer({ onImageLoadAction, onAnnotationChan
         <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
           🔬 Medical Image Viewer
         </h2>
-
+        
         {/* Toolbar */}
         <div className="flex flex-wrap gap-4 items-center">
           <label className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 cursor-pointer">
@@ -113,7 +62,7 @@ export default function MedicalImageViewer({ onImageLoadAction, onAnnotationChan
               className="hidden"
             />
           </label>
-
+          
           <button
             onClick={() => setCurrentTool(currentTool === 'measurement' ? null : 'measurement')}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg ${
@@ -125,7 +74,7 @@ export default function MedicalImageViewer({ onImageLoadAction, onAnnotationChan
             <Ruler size={20} />
             Measure
           </button>
-
+          
           <button
             onClick={() => setCurrentTool(currentTool === 'roi' ? null : 'roi')}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg ${
@@ -137,7 +86,7 @@ export default function MedicalImageViewer({ onImageLoadAction, onAnnotationChan
             <Square size={20} />
             ROI
           </button>
-
+          
           <button
             onClick={() => setCurrentTool(currentTool === 'text' ? null : 'text')}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg ${
@@ -149,7 +98,7 @@ export default function MedicalImageViewer({ onImageLoadAction, onAnnotationChan
             <Type size={20} />
             Annotate
           </button>
-
+          
           <button className="flex items-center gap-2 px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg">
             <Diff size={20} />
             Compare
@@ -168,16 +117,6 @@ export default function MedicalImageViewer({ onImageLoadAction, onAnnotationChan
               className="max-w-full h-auto"
               style={{ maxHeight: '600px' }}
             />
-            <canvas
-              ref={canvasRef}
-              className="absolute top-0 left-0 cursor-crosshair"
-              onMouseDown={handleCanvasMouseDown}
-              onMouseUp={handleCanvasMouseUp}
-              style={{
-                width: imageRef.current?.clientWidth || 0,
-                height: imageRef.current?.clientHeight || 0
-              }}
-            />
           </div>
         ) : (
           <div className="flex items-center justify-center h-64 text-gray-500 dark:text-gray-400">
@@ -185,6 +124,17 @@ export default function MedicalImageViewer({ onImageLoadAction, onAnnotationChan
           </div>
         )}
       </div>
+
+      {/* Status */}
+      {currentTool && (
+        <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+          <p className="text-sm text-blue-700 dark:text-blue-300">
+            {currentTool === 'measurement' && 'Click and drag to measure distances'}
+            {currentTool === 'roi' && 'Click and drag to define regions of interest'}
+            {currentTool === 'text' && 'Click to add text annotations'}
+          </p>
+        </div>
+      )}
 
       {/* Annotations Panel */}
       {annotations.length > 0 && (

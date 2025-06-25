@@ -1,6 +1,8 @@
 "use client"
 
 import { useState } from 'react'
+import SocialShare from '../components/SocialShare'
+import { useNotifications } from '@/contexts/NotificationContext'
 
 // Current time: 2025-05-17 16:27:50
 // User: linhduongtuan
@@ -20,6 +22,8 @@ export default function Contact() {
     success: boolean;
     message: string;
   } | null>(null)
+  
+  const { addNotification } = useNotifications()
   
   const interestOptions = [
     'Research Collaboration',
@@ -49,28 +53,87 @@ export default function Contact() {
     })
   }
   
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    // In a real application, you would send this data to your backend
-    console.log('Form submitted:', formData)
-    
-    // Simulate form submission
+    // Validate form
+    if (!formData.name || !formData.email || !formData.subject || !formData.message) {
+      const errorMessage = 'Please fill in all required fields.';
+      setSubmitStatus({
+        submitted: true,
+        success: false,
+        message: errorMessage
+      })
+      addNotification({
+        type: 'error',
+        message: errorMessage
+      });
+      return
+    }
+
     setSubmitStatus({
       submitted: true,
-      success: true,
-      message: 'Thank you for your message! I will get back to you soon.'
+      success: false,
+      message: 'Sending message...'
     })
-    
-    // Reset form
-    setFormData({
-      name: '',
-      email: '',
-      organization: '',
-      subject: '',
-      message: '',
-      interests: []
-    })
+
+    try {
+      const response = await fetch('/api/contact', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      })
+
+      const result = await response.json()
+
+      if (response.ok) {
+        const successMessage = result.message || 'Thank you for your message! I will get back to you soon.';
+        setSubmitStatus({
+          submitted: true,
+          success: true,
+          message: successMessage
+        })
+        addNotification({
+          type: 'success',
+          message: successMessage
+        });
+        
+        // Reset form
+        setFormData({
+          name: '',
+          email: '',
+          organization: '',
+          subject: '',
+          message: '',
+          interests: []
+        })
+      } else {
+        const errorMessage = result.error || 'Failed to send message. Please try again.';
+        setSubmitStatus({
+          submitted: true,
+          success: false,
+          message: errorMessage
+        })
+        addNotification({
+          type: 'error',
+          message: errorMessage
+        });
+      }
+    } catch (error) {
+      console.error('Contact form error:', error)
+      const networkError = 'Network error. Please check your connection and try again.';
+      setSubmitStatus({
+        submitted: true,
+        success: false,
+        message: networkError
+      })
+      addNotification({
+        type: 'error',
+        message: networkError
+      });
+    }
   }
 
   return (
@@ -283,6 +346,15 @@ export default function Contact() {
                 </button>
               </form>
             )}
+            
+            {/* Social Share */}
+            <div className="mt-8">
+              <SocialShare 
+                title="Contact - Scientific Blog"
+                url="/contact"
+                excerpt="Get in touch for research collaboration, consulting, or academic opportunities."
+              />
+            </div>
             
             {/* Last updated notice */}
             <div className="text-xs text-gray-500 dark:text-gray-400 mt-6 text-right">

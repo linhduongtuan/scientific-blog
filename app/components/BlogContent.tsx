@@ -1,11 +1,60 @@
 "use client"
 
 import ReactMarkdown from 'react-markdown'
+import rehypeRaw from 'rehype-raw'
 import SyntaxHighlighter from 'react-syntax-highlighter'
 import atomOneDark from 'react-syntax-highlighter/dist/styles/atom-one-dark'
 import atomOneLight from 'react-syntax-highlighter/dist/styles/atom-one-light'
 import { useTheme } from 'next-themes'
 import { useState, useEffect } from 'react'
+import 'katex/dist/katex.min.css' // Import KaTeX CSS
+
+// Enhanced content processor for LaTeX math rendering
+const processLatexContent = async (content: string): Promise<string> => {
+  try {
+    // Dynamically import KaTeX
+    const katex = await import('katex')
+    
+    let processedContent = content
+    
+    // Handle display math ($$...$$) - must be done first
+    processedContent = processedContent.replace(/\$\$([\s\S]*?)\$\$/g, (match, formula) => {
+      try {
+        const rendered = katex.renderToString(formula.trim(), {
+          displayMode: true,
+          throwOnError: false,
+          trust: true,
+          strict: false
+        })
+        return `<div class="math-display">${rendered}</div>`
+      } catch (e) {
+        console.error('Display math rendering error:', e, 'Formula:', formula)
+        return `<div class="math-error">$$${formula}$$</div>`
+      }
+    })
+    
+    // Handle inline math ($...$) - avoid matching display math delimiters
+    processedContent = processedContent.replace(/(?<!\$)\$(?!\$)([^$\n]+?)\$(?!\$)/g, (match, formula) => {
+      try {
+        const rendered = katex.renderToString(formula.trim(), {
+          displayMode: false,
+          throwOnError: false,
+          trust: true,
+          strict: false
+        })
+        return `<span class="math-inline">${rendered}</span>`
+      } catch (e) {
+        console.error('Inline math rendering error:', e, 'Formula:', formula)
+        return `<span class="math-error">${match}</span>`
+      }
+    })
+    
+    return processedContent
+  } catch (error) {
+    console.error('KaTeX import error:', error)
+    return content
+  }
+}
 
 // Enhanced code block component with copy functionality
 const CodeBlock: React.FC<{ 
@@ -118,14 +167,22 @@ const CodeBlock: React.FC<{
 
 // Enhanced BlogContent component with proper markdown rendering
 export default function BlogContent({ content }: { content: string }) {
-  const [mounted, setMounted] = useState(false)
+  const [processedContent, setProcessedContent] = useState<string>(content)
+  const [isProcessing, setIsProcessing] = useState(true)
 
-  // Avoid hydration mismatch by only rendering after mount
+  // Process LaTeX content on mount and when content changes
   useEffect(() => {
-    setMounted(true)
-  }, [])
+    const processContent = async () => {
+      setIsProcessing(true)
+      const processed = await processLatexContent(content)
+      setProcessedContent(processed)
+      setIsProcessing(false)
+    }
+    
+    processContent()
+  }, [content])
 
-  if (!mounted) {
+  if (isProcessing) {
     return (
       <div className="prose prose-lg dark:prose-invert max-w-none">
         <div className="animate-pulse">
@@ -138,8 +195,9 @@ export default function BlogContent({ content }: { content: string }) {
   }
 
   return (
-    <div className="prose prose-lg dark:prose-invert max-w-none">
+    <div className="prose prose-lg dark:prose-invert max-w-none math-content">
       <ReactMarkdown
+        rehypePlugins={[rehypeRaw]}
         components={{
           code: CodeBlock,
           h1: ({ children }) => <h1 className="text-3xl font-bold mb-6 mt-8">{children}</h1>,
@@ -161,8 +219,26 @@ export default function BlogContent({ content }: { content: string }) {
           ),
         }}
       >
-        {content}
+        {processedContent}
       </ReactMarkdown>
+      
+      <style jsx>{`
+        .math-content .math-display {
+          text-align: center;
+          margin: 1.5rem 0;
+          overflow-x: auto;
+        }
+        .math-content .math-inline {
+          display: inline;
+        }
+        .math-content .math-error {
+          color: #ef4444;
+          background: #fef2f2;
+          padding: 0.25rem;
+          border-radius: 0.25rem;
+          font-family: monospace;
+        }
+      `}</style>
     </div>
   )
 }

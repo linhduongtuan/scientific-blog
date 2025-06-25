@@ -1,11 +1,31 @@
 "use client"
 
-import React from 'react'
-import MedicalImageViewer from '../components/MedicalImageViewer'
-import ResearchDataPortal from '../components/ResearchDataPortal'
-import DigitalLabNotebook from '../components/DigitalLabNotebook'
+import React, { useState, useEffect } from 'react'
+
+// Direct imports with client-side guards - using simplified components for testing
+import MedicalImageViewer from '../components/SimpleMedicalViewer'
+import ResearchDataPortal from '../components/SimpleDataPortal'
+import DigitalLabNotebook from '../components/SimpleLabNotebook'
+
+// Simple loading component
+const LoadingComponent = ({ title }: { title: string }) => (
+  <div className="w-full max-w-6xl mx-auto p-6 bg-white dark:bg-gray-900 rounded-lg shadow-lg">
+    <div className="animate-pulse">
+      <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-1/3 mb-4"></div>
+      <div className="h-64 bg-gray-200 dark:bg-gray-700 rounded mb-4"></div>
+      <div className="text-center text-gray-500 dark:text-gray-400">
+        Loading {title}...
+      </div>
+    </div>
+  </div>
+)
 
 export default function MedicalResearchPage() {
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -61,17 +81,29 @@ export default function MedicalResearchPage() {
 
         {/* Medical Image Viewer Section */}
         <div className="mb-12">
-          <MedicalImageViewer />
+          {mounted ? (
+            <MedicalImageViewer />
+          ) : (
+            <LoadingComponent title="Medical Image Viewer" />
+          )}
         </div>
 
         {/* Research Data Portal Section */}
         <div className="mb-12">
-          <ResearchDataPortal />
+          {mounted ? (
+            <ResearchDataPortal />
+          ) : (
+            <LoadingComponent title="Research Data Portal" />
+          )}
         </div>
 
         {/* Digital Lab Notebook Section */}
         <div className="mb-12">
-          <DigitalLabNotebook />
+          {mounted ? (
+            <DigitalLabNotebook />
+          ) : (
+            <LoadingComponent title="Digital Lab Notebook" />
+          )}
         </div>
 
         {/* Key Features Summary */}

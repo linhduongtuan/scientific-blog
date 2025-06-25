@@ -1,4 +1,3 @@
-
 "use client"
 
 import React, { useState, useEffect } from 'react'
@@ -13,7 +12,7 @@ interface Dataset {
   created_at: string
 }
 
-export default function ResearchDataPortal() {
+export default function ResearchDataPortalOptimized() {
   const [mounted, setMounted] = useState(false)
   const [datasets, setDatasets] = useState<Dataset[]>([])
   const [searchTerm, setSearchTerm] = useState('')
@@ -35,6 +34,14 @@ export default function ResearchDataPortal() {
       author: "Research Team",
       version: "1.0",
       created_at: "2025-06-25T11:00:00Z"
+    },
+    {
+      id: 3,
+      name: "Lab Experiment Results",
+      description: "Digital lab notebook data and experimental measurements",
+      author: "Dr. Linh Duong Tuan",
+      version: "2.0",
+      created_at: "2025-06-25T12:00:00Z"
     }
   ]
 
@@ -69,7 +76,7 @@ export default function ResearchDataPortal() {
         <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
           📊 Research Data Portal
         </h2>
-
+        
         {/* Search and Actions */}
         <div className="flex flex-wrap gap-4 items-center mb-6">
           <div className="flex-1 min-w-64">
@@ -84,12 +91,12 @@ export default function ResearchDataPortal() {
               />
             </div>
           </div>
-
+          
           <button className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
             <Upload size={20} />
             Upload Dataset
           </button>
-
+          
           <button className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600">
             <Database size={20} />
             New Dataset
@@ -113,16 +120,16 @@ export default function ResearchDataPortal() {
                 v{dataset.version}
               </span>
             </div>
-
+            
             <p className="text-gray-600 dark:text-gray-300 text-sm mb-4">
               {dataset.description}
             </p>
-
+            
             <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400">
               <span>{dataset.author}</span>
               <span>{new Date(dataset.created_at).toLocaleDateString()}</span>
             </div>
-
+            
             <div className="mt-4 flex gap-2">
               <button className="flex items-center gap-1 px-3 py-1 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded text-sm hover:bg-gray-200 dark:hover:bg-gray-700">
                 <Download size={16} />
@@ -156,13 +163,13 @@ export default function ResearchDataPortal() {
                 ✕
               </button>
             </div>
-
+            
             <div className="space-y-4">
               <div>
                 <h4 className="font-semibold text-gray-900 dark:text-white">Description</h4>
                 <p className="text-gray-600 dark:text-gray-300">{selectedDataset.description}</p>
               </div>
-
+              
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <h4 className="font-semibold text-gray-900 dark:text-white">Author</h4>
@@ -173,7 +180,7 @@ export default function ResearchDataPortal() {
                   <p className="text-gray-600 dark:text-gray-300">{selectedDataset.version}</p>
                 </div>
               </div>
-
+              
               <div>
                 <h4 className="font-semibold text-gray-900 dark:text-white">Created</h4>
                 <p className="text-gray-600 dark:text-gray-300">

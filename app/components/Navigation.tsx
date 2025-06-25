@@ -161,7 +161,7 @@ export default function Navigation() {
                 </button>
               </div>
               <div className="p-6">
-                <SubscriptionForm onSuccess={() => setShowSubscribeModal(false)} />
+                <SubscriptionForm onSuccessAction={() => setShowSubscribeModal(false)} />
               </div>
             </div>
           </div>

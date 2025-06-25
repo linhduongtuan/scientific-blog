@@ -1,8 +1,7 @@
-
 "use client"
 
 import React, { useState, useEffect } from 'react'
-import { BookOpen, Plus, Calendar, User, FlaskConical, Target } from 'lucide-react'
+import { BookOpen, Plus, Calendar, User, Target, CheckCircle } from 'lucide-react'
 
 interface Experiment {
   id: number
@@ -11,9 +10,10 @@ interface Experiment {
   researcher: string
   start_date: string
   objective: string
+  progress: number
 }
 
-export default function DigitalLabNotebook() {
+export default function DigitalLabNotebookOptimized() {
   const [mounted, setMounted] = useState(false)
   const [experiments, setExperiments] = useState<Experiment[]>([
     {
@@ -22,7 +22,26 @@ export default function DigitalLabNotebook() {
       status: "completed",
       researcher: "Dr. Linh Duong Tuan",
       start_date: "2025-06-25",
-      objective: "Analyze CT images to identify potential lung abnormalities"
+      objective: "Analyze CT images to identify potential lung abnormalities",
+      progress: 100
+    },
+    {
+      id: 2,
+      title: "Medical Image Annotation Training",
+      status: "in_progress",
+      researcher: "Research Team",
+      start_date: "2025-06-24",
+      objective: "Train machine learning models on annotated medical images",
+      progress: 75
+    },
+    {
+      id: 3,
+      title: "DICOM Processing Pipeline",
+      status: "planned",
+      researcher: "Dr. Linh Duong Tuan",
+      start_date: "2025-06-26",
+      objective: "Develop automated DICOM processing workflow",
+      progress: 0
     }
   ])
   
@@ -55,13 +74,22 @@ export default function DigitalLabNotebook() {
     }
   }
 
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'planned': return <BookOpen size={16} />
+      case 'in_progress': return <Target size={16} />
+      case 'completed': return <CheckCircle size={16} />
+      default: return <BookOpen size={16} />
+    }
+  }
+
   return (
     <div className="w-full max-w-6xl mx-auto p-6 bg-white dark:bg-gray-900 rounded-lg shadow-lg">
       <div className="mb-6">
         <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
           📝 Digital Lab Notebook
         </h2>
-
+        
         <button className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
           <Plus size={20} />
           New Experiment
@@ -80,11 +108,12 @@ export default function DigitalLabNotebook() {
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                 {experiment.title}
               </h3>
-              <span className={`text-sm px-2 py-1 rounded ${getStatusColor(experiment.status)}`}>
+              <span className={`text-sm px-2 py-1 rounded flex items-center gap-1 ${getStatusColor(experiment.status)}`}>
+                {getStatusIcon(experiment.status)}
                 {experiment.status.replace('_', ' ')}
               </span>
             </div>
-
+            
             <div className="space-y-2 text-sm text-gray-600 dark:text-gray-300">
               <div className="flex items-center gap-2">
                 <User size={16} />
@@ -97,6 +126,20 @@ export default function DigitalLabNotebook() {
               <div className="flex items-start gap-2">
                 <Target size={16} className="mt-0.5" />
                 <span className="line-clamp-2">{experiment.objective}</span>
+              </div>
+            </div>
+
+            {/* Progress Bar */}
+            <div className="mt-4">
+              <div className="flex items-center justify-between text-sm mb-1">
+                <span className="text-gray-600 dark:text-gray-400">Progress</span>
+                <span className="text-gray-900 dark:text-white font-medium">{experiment.progress}%</span>
+              </div>
+              <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                <div 
+                  className="bg-blue-500 h-2 rounded-full transition-all duration-300"
+                  style={{ width: `${experiment.progress}%` }}
+                ></div>
               </div>
             </div>
           </div>
@@ -118,7 +161,7 @@ export default function DigitalLabNotebook() {
                 ✕
               </button>
             </div>
-
+            
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-4">
                 <div>
@@ -127,36 +170,38 @@ export default function DigitalLabNotebook() {
                     <p><span className="font-medium">Researcher:</span> {selectedExperiment.researcher}</p>
                     <p><span className="font-medium">Start Date:</span> {new Date(selectedExperiment.start_date).toLocaleDateString()}</p>
                     <p><span className="font-medium">Status:</span> {selectedExperiment.status.replace('_', ' ')}</p>
+                    <p><span className="font-medium">Progress:</span> {selectedExperiment.progress}%</p>
                   </div>
                 </div>
-
+                
                 <div>
                   <h4 className="font-semibold text-gray-900 dark:text-white mb-2">Objective</h4>
                   <p className="text-gray-600 dark:text-gray-300 text-sm">{selectedExperiment.objective}</p>
                 </div>
               </div>
-
+              
               <div className="space-y-4">
                 <div>
                   <h4 className="font-semibold text-gray-900 dark:text-white mb-2">Recent Log Entries</h4>
                   <div className="space-y-2">
                     <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded text-sm">
                       <p className="font-medium">Observation</p>
-                      <p className="text-gray-600 dark:text-gray-300">Image comparison shows structural differences...</p>
+                      <p className="text-gray-600 dark:text-gray-300">Image analysis completed successfully with high accuracy...</p>
                     </div>
                     <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded text-sm">
                       <p className="font-medium">Procedure</p>
-                      <p className="text-gray-600 dark:text-gray-300">Applied annotation tools to mark regions of interest...</p>
+                      <p className="text-gray-600 dark:text-gray-300">Applied advanced annotation tools for region marking...</p>
                     </div>
                   </div>
                 </div>
-
+                
                 <div>
-                  <h4 className="font-semibold text-gray-900 dark:text-white mb-2">Measurements</h4>
+                  <h4 className="font-semibold text-gray-900 dark:text-white mb-2">Key Measurements</h4>
                   <div className="space-y-1 text-sm">
-                    <p>Image dimensions: 512 x 512 pixels</p>
-                    <p>Heart region area: 15000 pixels²</p>
-                    <p>Annotation count: 3</p>
+                    <p>• Image dimensions: 512 x 512 pixels</p>
+                    <p>• Processing time: 2.3 seconds</p>
+                    <p>• Accuracy score: 94.7%</p>
+                    <p>• Annotations created: 15</p>
                   </div>
                 </div>
               </div>

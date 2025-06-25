@@ -17,6 +17,24 @@ Chest X-ray interpretation for TB detection requires significant expertise and c
 
 ## Our Approach
 
+### Mathematical Foundation
+
+The loss function for our binary classification task is defined as:
+
+$$\mathcal{L}(\theta) = \frac{1}{n} \sum_{i=1}^{n} \ell(f_\theta(x_i), y_i) + \lambda \Omega(\theta)$$
+
+Where:
+- $\mathcal{L}(\theta)$ is the loss function
+- $\ell$ is the individual loss (binary cross-entropy)
+- $\Omega(\theta)$ is the regularization term
+- $\lambda$ is the regularization parameter
+
+The sensitivity and specificity are calculated as:
+
+$$\text{Sensitivity} = \frac{TP}{TP + FN}$$
+
+$$\text{Specificity} = \frac{TN}{TN + FP}$$
+
 ### Dataset and Preprocessing
 
 We worked with a large dataset of chest X-rays from multiple international sources:
