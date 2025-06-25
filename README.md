@@ -1,4 +1,4 @@
-# Scientific Blog - Linh Duong Tuan
+# Scientific Blog - Linh (Tuan) Duong
 
 A modern, feature-rich scientific blog platform showcasing research in computational pathology, AI for medical imaging, and data science. Built with Next.js 14, featuring real-time scientific metrics dashboard, advanced content management, and comprehensive PWA capabilities.
 
