@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 
 import { NextRequest, NextResponse } from "next/server"
 import { apiRateLimit } from "@/app/lib/rate-limit"
+import { sendContactNotification, sendWebhookNotification } from "@/app/lib/notifications"
 
 // Contact form submission endpoint
 export async function POST(req: NextRequest) {
@@ -41,8 +42,8 @@ export async function POST(req: NextRequest) {
     // 2. Send email notification
     // 3. Send auto-reply to user
     
-    // For now, we'll simulate the process
-    console.log('Contact form submission:', {
+    // Save the contact information
+    const contactData = {
       name,
       email,
       organization,
@@ -50,39 +51,35 @@ export async function POST(req: NextRequest) {
       message,
       interests,
       timestamp: new Date().toISOString()
-    })
-
-    // Simulate email sending delay
-    await new Promise(resolve => setTimeout(resolve, 1000))
-
-    // TODO: Integrate with email service (e.g., SendGrid, Mailgun, etc.)
-    // Example with SendGrid:
-    /*
-    const sgMail = require('@sendgrid/mail')
-    sgMail.setApiKey(process.env.SENDGRID_API_KEY)
-    
-    const msg = {
-      to: 'lduong@kth.se',
-      from: 'noreply@scientificblog.com',
-      subject: `Contact Form: ${subject}`,
-      html: `
-        <h2>New Contact Form Submission</h2>
-        <p><strong>Name:</strong> ${name}</p>
-        <p><strong>Email:</strong> ${email}</p>
-        <p><strong>Organization:</strong> ${organization || 'Not provided'}</p>
-        <p><strong>Interests:</strong> ${interests?.join(', ') || 'None specified'}</p>
-        <p><strong>Subject:</strong> ${subject}</p>
-        <p><strong>Message:</strong></p>
-        <p>${message.replace(/\n/g, '<br>')}</p>
-      `
     }
     
-    await sgMail.send(msg)
-    */
+    console.log('Contact form submission:', contactData)
+
+    // Send email notification to admin
+    const emailSent = await sendContactNotification({
+      name,
+      email,
+      organization,
+      subject,
+      message,
+      interests
+    })
+
+    // Send webhook notification (optional - for Slack, Discord, etc.)
+    await sendWebhookNotification('contact', contactData)
+
+    // TODO: Save to database
+    // const contact = await prisma.contact.create({
+    //   data: contactData
+    // })
+
+    // TODO: Send auto-reply to user
+    // await sendAutoReply(email, name)
 
     return NextResponse.json({
       success: true,
-      message: "Thank you for your message! I will get back to you within 24-48 hours."
+      message: "Thank you for your message! I will get back to you within 24-48 hours.",
+      notificationSent: emailSent
     })
 
   } catch (error: any) {

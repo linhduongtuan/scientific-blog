@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 
 import { NextRequest, NextResponse } from "next/server"
 import { apiRateLimit } from "@/app/lib/rate-limit"
+import { sendSubscriptionNotification, sendWebhookNotification } from "@/app/lib/notifications"
 
 export async function POST(req: NextRequest) {
   try {
@@ -36,16 +37,26 @@ export async function POST(req: NextRequest) {
     }
 
     // Simulate database operations
-    console.log('Subscription request:', {
+    const subscriptionData = {
       email,
       name: name || 'Anonymous',
       researchInterests: researchInterests || [],
       subscriptionType: subscriptionType || 'free',
       timestamp: new Date().toISOString()
+    }
+    
+    console.log('Subscription request:', subscriptionData)
+
+    // Send email notification to admin
+    const emailSent = await sendSubscriptionNotification({
+      email,
+      name,
+      researchInterests,
+      subscriptionType
     })
 
-    // Simulate processing delay
-    await new Promise(resolve => setTimeout(resolve, 1500))
+    // Send webhook notification (optional)
+    await sendWebhookNotification('subscription', subscriptionData)
 
     // TODO: In a real implementation:
     // 1. Save subscriber to database
@@ -78,7 +89,8 @@ export async function POST(req: NextRequest) {
         email,
         name: name || 'Anonymous',
         subscriptionType: subscriptionType || 'free'
-      }
+      },
+      notificationSent: emailSent
     })
 
   } catch (error: any) {
