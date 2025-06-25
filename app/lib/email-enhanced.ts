@@ -2,8 +2,13 @@ import nodemailer from "nodemailer";
 
 // Email configuration based on environment variables
 function createTransporter() {
+  // Check if email is disabled for testing
+  if (process.env.EMAIL_DISABLED === 'true') {
+    return null;
+  }
+  
   // Check if SendGrid is configured
-  if (process.env.SENDGRID_API_KEY) {
+  if (process.env.SENDGRID_API_KEY && process.env.SENDGRID_API_KEY !== 'SG.PASTE_YOUR_ACTUAL_SENDGRID_API_KEY_HERE') {
     return nodemailer.createTransport({
       service: 'SendGrid',
       auth: {
@@ -56,6 +61,14 @@ export async function sendContactNotification({
 
   try {
     const transporter = createTransporter();
+    
+    // Handle disabled email mode
+    if (!transporter) {
+      console.log('📧 Email disabled - Contact form submission logged but no email sent');
+      console.log('📨 Contact Details:', { name, email, subject, organization, interests });
+      return;
+    }
+    
     const fromEmail = process.env.FROM_EMAIL || process.env.EMAIL_FROM || email;
 
     const interestsText = interests && interests.length > 0 
@@ -134,6 +147,14 @@ export async function sendSubscriptionConfirmationEmail(
 
   try {
     const transporter = createTransporter();
+    
+    // Handle disabled email mode
+    if (!transporter) {
+      console.log('📧 Email disabled - Subscription logged but no email sent');
+      console.log('📨 Subscription Details:', { email, name });
+      return;
+    }
+    
     const fromEmail = process.env.FROM_EMAIL || process.env.EMAIL_FROM;
 
     const mailOptions = {
@@ -264,6 +285,19 @@ export async function testEmailConfiguration() {
 
   try {
     const transporter = createTransporter();
+    
+    // Handle disabled email mode
+    if (!transporter) {
+      return {
+        success: true,
+        message: 'Email is disabled for testing. Contact forms will work but no emails will be sent.',
+        configuration: {
+          mode: 'disabled',
+          admin_email: process.env.ADMIN_EMAIL,
+          status: 'Email functionality is disabled via EMAIL_DISABLED=true'
+        }
+      };
+    }
     
     // Verify transporter configuration
     await transporter.verify();
