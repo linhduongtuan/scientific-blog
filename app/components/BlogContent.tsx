@@ -1,8 +1,9 @@
 "use client"
 
 import ReactMarkdown from 'react-markdown'
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
-import { oneDark, oneLight } from 'react-syntax-highlighter/dist/esm/styles/prism'
+import SyntaxHighlighter from 'react-syntax-highlighter'
+import atomOneDark from 'react-syntax-highlighter/dist/styles/atom-one-dark'
+import atomOneLight from 'react-syntax-highlighter/dist/styles/atom-one-light'
 import { useTheme } from 'next-themes'
 import { useState, useEffect } from 'react'
 
@@ -74,7 +75,7 @@ const CodeBlock = ({
       {/* Code content */}
       <div className="relative">
         <SyntaxHighlighter
-          style={theme === 'dark' ? oneDark : oneLight}
+          style={theme === 'dark' ? atomOneDark : atomOneLight}
           language={language}
           PreTag="div"
           customStyle={{
