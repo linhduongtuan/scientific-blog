@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 
 import { NextRequest, NextResponse } from 'next/server'
 import { apiRateLimit } from '@/app/lib/rate-limit'
+import { sendContactNotification, sendWebhookNotification } from '@/app/lib/email-enhanced'
 
 export async function POST(req: NextRequest) {
   try {
@@ -24,7 +25,7 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Log the contact form submission (in production, you'd save to database or send email)
+    // Log the contact form submission
     console.log('📧 Contact Form Submission:', {
       timestamp: new Date().toISOString(),
       name,
@@ -35,12 +36,42 @@ export async function POST(req: NextRequest) {
       message: message.substring(0, 100) + (message.length > 100 ? '...' : '')
     })
 
-    // In production, you would:
-    // 1. Save to database
-    // 2. Send email notification
-    // 3. Send auto-reply to user
+    // Send email notification to admin
+    try {
+      await sendContactNotification({
+        name,
+        email,
+        subject,
+        message,
+        organization,
+        interests
+      })
+    } catch (emailError) {
+      console.error('Email notification failed:', emailError)
+      // Continue processing even if email fails
+    }
+
+    // Send webhook notification if configured
+    if (process.env.CONTACT_WEBHOOK_URL) {
+      try {
+        await sendWebhookNotification(process.env.CONTACT_WEBHOOK_URL, {
+          text: `📧 New Contact Form Submission`,
+          blocks: [
+            {
+              type: "section",
+              text: {
+                type: "mrkdwn",
+                text: `*New Contact Form Submission*\n*From:* ${name} (${email})\n*Subject:* ${subject}\n*Organization:* ${organization || 'Not specified'}\n*Message:* ${message.substring(0, 200)}${message.length > 200 ? '...' : ''}`
+              }
+            }
+          ]
+        })
+      } catch (webhookError) {
+        console.error('Webhook notification failed:', webhookError)
+        // Continue processing even if webhook fails
+      }
+    }
     
-    // For now, simulate successful submission
     return NextResponse.json({
       success: true,
       message: 'Thank you for your message! I will get back to you soon.'

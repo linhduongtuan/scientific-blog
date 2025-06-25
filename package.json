@@ -11,8 +11,12 @@
     "db:push": "prisma db push",
     "db:studio": "prisma studio",
     "db:setup": "node scripts/setup-db.js",
+    "db:reset": "rm -f prisma/dev.db && npm run db:push && npm run db:setup",
     "setup": "npm run db:generate && npm run db:push && npm run db:setup",
+    "setup:backend": "./setup-backend.sh",
     "test:auth": "echo 'Visit http://localhost:3000/test to test authentication'",
+    "test:email": "curl -X GET http://localhost:3000/api/test-email",
+    "test:backend": "curl -X GET http://localhost:3000/api/backend-status",
     "generate-icons": "node scripts/generate-icons.js"
   },
   "dependencies": {

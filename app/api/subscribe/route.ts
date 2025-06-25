@@ -5,7 +5,7 @@ import { prisma } from "@/app/lib/prisma"
 import { subscriptionSchema } from "@/app/lib/validation"
 import { getCurrentUser } from "@/app/lib/auth"
 import { apiRateLimit } from "@/app/lib/rate-limit"
-import { sendSubscriptionConfirmationEmail } from "@/app/lib/email"
+import { sendSubscriptionConfirmationEmail } from "@/app/lib/email-enhanced"
 
 export async function POST(req: NextRequest) {
   try {
