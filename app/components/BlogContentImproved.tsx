@@ -6,54 +6,29 @@ import atomOneDark from 'react-syntax-highlighter/dist/styles/atom-one-dark'
 import atomOneLight from 'react-syntax-highlighter/dist/styles/atom-one-light'
 import { useTheme } from 'next-themes'
 import { useState, useEffect } from 'react'
-import remarkMath from 'remark-math'
-import rehypeKatex from 'rehype-katex'
-import 'katex/dist/katex.min.css'
 import type { CodeBlockProps, BlogContentProps } from '@/types/components'
 
-// Math component for inline and display math
-function MathComponent({ value, displayMode = false }: { value: string; displayMode?: boolean }) {
-  const [mounted, setMounted] = useState(false)
-
-  useEffect(() => {
-    setMounted(true)
-  }, [])
-
-  if (!mounted) {
-    return (
-      <span className={`${displayMode ? 'block my-4' : 'inline'} bg-gray-100 dark:bg-gray-800 rounded px-2 py-1 animate-pulse`}>
-        Loading math...
-      </span>
-    )
-  }
-
-  return (
-    <span 
-      className={`${displayMode ? 'block my-6 text-center' : 'inline'} math-expression`}
-      style={{ 
-        fontSize: displayMode ? '1.1em' : '1em',
-        lineHeight: displayMode ? '1.5' : 'inherit'
-      }}
-    >
-      {displayMode ? `$$${value}$$` : `$${value}$`}
-    </span>
-  )
-}
-
-// Enhanced CodeBlock component with copy functionality
-function CodeBlock({ inline, className, children, ...props }: CodeBlockProps) {
+// Enhanced code block component with copy functionality
+const CodeBlock = ({ 
+  inline, 
+  className, 
+  children, 
+  ...props 
+}: CodeBlockProps) => {
   const { theme } = useTheme()
   const [copied, setCopied] = useState(false)
   
-  const language = className?.replace('language-', '') || ''
+  const match = /language-(\w+)/.exec(className || '')
+  const language = match ? match[1] : ''
   
   const handleCopy = async () => {
+    const code = String(children).replace(/\n$/, '')
     try {
-      await navigator.clipboard.writeText(String(children))
+      await navigator.clipboard.writeText(code)
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
     } catch (err) {
-      console.error('Failed to copy text: ', err)
+      console.error('Failed to copy code:', err)
     }
   }
 
@@ -161,26 +136,8 @@ export default function BlogContent({ content }: BlogContentProps) {
   return (
     <div className="prose prose-lg dark:prose-invert max-w-none">
       <ReactMarkdown
-        remarkPlugins={[remarkMath]}
-        rehypePlugins={[rehypeKatex]}
         components={{
           code: CodeBlock,
-          // Math rendering - these are the correct property names from rehype-katex
-          span: ({ className, children, ...props }: any) => {
-            if (className === 'math math-display') {
-              return <div className="my-6 text-center overflow-x-auto">{children}</div>
-            }
-            if (className === 'math math-inline') {
-              return <span className="inline-block">{children}</span>
-            }
-            return <span className={className} {...props}>{children}</span>
-          },
-          div: ({ className, children, ...props }: any) => {
-            if (className === 'math math-display') {
-              return <div className="my-6 text-center overflow-x-auto" {...props}>{children}</div>
-            }
-            return <div className={className} {...props}>{children}</div>
-          },
           h1: ({ children }) => <h1 className="text-3xl font-bold mb-6 mt-8">{children}</h1>,
           h2: ({ children }) => <h2 className="text-2xl font-semibold mb-4 mt-6">{children}</h2>,
           h3: ({ children }) => <h3 className="text-xl font-medium mb-3 mt-5">{children}</h3>,

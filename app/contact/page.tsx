@@ -1,8 +1,6 @@
 "use client"
 
 import { useState } from 'react'
-import SocialShare from '../components/SocialShare'
-import { useNotifications } from '@/contexts/NotificationContext'
 
 // Current time: 2025-05-17 16:27:50
 // User: linhduongtuan
@@ -22,8 +20,6 @@ export default function Contact() {
     success: boolean;
     message: string;
   } | null>(null)
-  
-  const { addNotification } = useNotifications()
   
   const interestOptions = [
     'Research Collaboration',
@@ -56,27 +52,16 @@ export default function Contact() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    // Validate form
+    // Validate required fields
     if (!formData.name || !formData.email || !formData.subject || !formData.message) {
-      const errorMessage = 'Please fill in all required fields.';
       setSubmitStatus({
         submitted: true,
         success: false,
-        message: errorMessage
+        message: 'Please fill in all required fields.'
       })
-      addNotification({
-        type: 'error',
-        message: errorMessage
-      });
       return
     }
-
-    setSubmitStatus({
-      submitted: true,
-      success: false,
-      message: 'Sending message...'
-    })
-
+    
     try {
       const response = await fetch('/api/contact', {
         method: 'POST',
@@ -85,22 +70,17 @@ export default function Contact() {
         },
         body: JSON.stringify(formData),
       })
-
+      
       const result = await response.json()
-
+      
       if (response.ok) {
-        const successMessage = result.message || 'Thank you for your message! I will get back to you soon.';
         setSubmitStatus({
           submitted: true,
           success: true,
-          message: successMessage
+          message: result.message || 'Thank you for your message! I will get back to you soon.'
         })
-        addNotification({
-          type: 'success',
-          message: successMessage
-        });
         
-        // Reset form
+        // Reset form on success
         setFormData({
           name: '',
           email: '',
@@ -110,29 +90,19 @@ export default function Contact() {
           interests: []
         })
       } else {
-        const errorMessage = result.error || 'Failed to send message. Please try again.';
         setSubmitStatus({
           submitted: true,
           success: false,
-          message: errorMessage
+          message: result.error || 'An error occurred while sending your message.'
         })
-        addNotification({
-          type: 'error',
-          message: errorMessage
-        });
       }
     } catch (error) {
       console.error('Contact form error:', error)
-      const networkError = 'Network error. Please check your connection and try again.';
       setSubmitStatus({
         submitted: true,
         success: false,
-        message: networkError
+        message: 'An error occurred while sending your message. Please try again.'
       })
-      addNotification({
-        type: 'error',
-        message: networkError
-      });
     }
   }
 
@@ -346,15 +316,6 @@ export default function Contact() {
                 </button>
               </form>
             )}
-            
-            {/* Social Share */}
-            <div className="mt-8">
-              <SocialShare 
-                title="Contact - Scientific Blog"
-                url="/contact"
-                excerpt="Get in touch for research collaboration, consulting, or academic opportunities."
-              />
-            </div>
             
             {/* Last updated notice */}
             <div className="text-xs text-gray-500 dark:text-gray-400 mt-6 text-right">

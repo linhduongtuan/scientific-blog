@@ -35,7 +35,7 @@ export default async function BlogPost({ params }: { params: { slug: string } })
   // Find related posts (posts with at least one matching tag)
   const relatedPosts = allPosts
     .filter(p => p.slug !== post.slug && 
-      p.tags && post.tags && 
+      (p.tags && p.tags.length > 0) && (post.tags && post.tags.length > 0) && 
       p.tags.some((tag: string) => post.tags.includes(tag)))
     .slice(0, 2) // Limit to 2 related posts
 

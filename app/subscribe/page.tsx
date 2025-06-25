@@ -1,5 +1,4 @@
 import SubscriptionForm from '../components/SubscriptionForm'
-import SocialShare from '../components/SocialShare'
 
 export default function SubscribePage() {
   // Current date and user information
@@ -61,15 +60,6 @@ export default function SubscribePage() {
             <SubscriptionForm />
           </div>
         </div>
-      </div>
-      
-      {/* Social Share */}
-      <div className="mt-8">
-        <SocialShare 
-          title="Subscribe to Research Updates - Scientific Blog"
-          url="/subscribe"
-          excerpt="Join our community of researchers and get exclusive updates, tutorials, and insights delivered to your inbox."
-        />
       </div>
       
       <div className="mt-6 text-xs text-gray-500 dark:text-gray-400 text-right">

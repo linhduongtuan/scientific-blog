@@ -19,42 +19,26 @@ export default function SocialShare({ title, url, excerpt }: SocialShareProps) {
 
   const copyToClipboard = async () => {
     try {
-      const urlToCopy = typeof window !== 'undefined' ? window.location.href : url
-      if (navigator.clipboard) {
-        await navigator.clipboard.writeText(urlToCopy)
-      } else {
-        // Fallback for older browsers
-        const textArea = document.createElement('textarea')
-        textArea.value = urlToCopy
-        document.body.appendChild(textArea)
-        textArea.select()
-        document.execCommand('copy')
-        document.body.removeChild(textArea)
-      }
+      await navigator.clipboard.writeText(shareData.url)
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
     } catch (err) {
       console.error('Failed to copy: ', err)
-      // Show error message to user
-      alert('Failed to copy link to clipboard')
     }
   }
 
   const shareOnTwitter = () => {
-    const urlToShare = typeof window !== 'undefined' ? window.location.href : url
-    const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(title)}&url=${encodeURIComponent(urlToShare)}`
+    const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(title)}&url=${encodeURIComponent(shareData.url)}`
     window.open(twitterUrl, '_blank', 'noopener,noreferrer')
   }
 
   const shareOnLinkedIn = () => {
-    const urlToShare = typeof window !== 'undefined' ? window.location.href : url
-    const linkedInUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(urlToShare)}`
+    const linkedInUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareData.url)}`
     window.open(linkedInUrl, '_blank', 'noopener,noreferrer')
   }
 
   const shareOnFacebook = () => {
-    const urlToShare = typeof window !== 'undefined' ? window.location.href : url
-    const facebookUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(urlToShare)}`
+    const facebookUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareData.url)}`
     window.open(facebookUrl, '_blank', 'noopener,noreferrer')
   }
 

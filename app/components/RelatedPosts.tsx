@@ -9,7 +9,7 @@ interface BlogPost {
   excerpt: string
   author: string
   date: string
-  tags: string[]
+  tags?: string[] // Make tags optional
   readingTime: string
 }
 
@@ -30,7 +30,7 @@ export default function RelatedPosts({ currentSlug, currentTags, allPosts }: Rel
         let score = 0
         
         // Tag similarity (highest weight)
-        const commonTags = post.tags.filter(tag => currentTags.includes(tag))
+        const commonTags = (post.tags || []).filter(tag => currentTags.includes(tag))
         score += commonTags.length * 3
         
         // Author similarity (medium weight)
@@ -94,7 +94,7 @@ export default function RelatedPosts({ currentSlug, currentTags, allPosts }: Rel
             <div className="p-6">
               {/* Tags */}
               <div className="flex flex-wrap gap-1 mb-3">
-                {post.tags.slice(0, 2).map((tag) => (
+                {(post.tags || []).slice(0, 2).map((tag) => (
                   <span 
                     key={tag}
                     className={`px-2 py-1 text-xs rounded-full ${

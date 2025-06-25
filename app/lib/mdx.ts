@@ -9,7 +9,7 @@ interface BlogPostFrontmatter {
   date: string;
   author: string;
   excerpt: string;
-  tags: string[];
+  tags?: string[]; // Make tags optional to handle cases where it's undefined
   coverImage?: string;
   readingTime?: string;
   [key: string]: any;
@@ -41,6 +41,7 @@ export async function getBlogPostBySlug(slug: string): Promise<BlogPost | null> 
         return {
           slug,
           ...frontmatter,
+          tags: frontmatter.tags || [], // Ensure tags is always an array
           content, // Raw markdown content
           rawContent: content
         } as BlogPost
@@ -81,7 +82,8 @@ export async function getAllBlogPosts(): Promise<BlogPostListing[]> {
             
             return {
               slug,
-              ...frontmatter
+              ...frontmatter,
+              tags: frontmatter.tags || [] // Ensure tags is always an array
             } as BlogPostListing
           })
       )

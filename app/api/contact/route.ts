@@ -1,91 +1,55 @@
 export const dynamic = 'force-dynamic'
 
-import { NextRequest, NextResponse } from "next/server"
-import { apiRateLimit } from "@/app/lib/rate-limit"
-import { sendContactNotification, sendWebhookNotification } from "@/app/lib/notifications"
+import { NextRequest, NextResponse } from 'next/server'
+import { apiRateLimit } from '@/app/lib/rate-limit'
 
-// Contact form submission endpoint
 export async function POST(req: NextRequest) {
   try {
     // Apply rate limiting
     const rateLimitResult = apiRateLimit(req)
     if (!rateLimitResult.success) {
       return NextResponse.json(
-        { error: "Too many requests. Please try again later." },
+        { error: 'Too many requests. Please try again later.' },
         { status: 429 }
       )
     }
 
-    const body = await req.json()
+    const { name, email, subject, message, organization, interests } = await req.json()
     
-    // Validate required fields
-    const { name, email, subject, message, organization, interests } = body
-    
+    // Basic validation
     if (!name || !email || !subject || !message) {
       return NextResponse.json(
-        { error: "Missing required fields" },
+        { error: 'Please fill in all required fields.' },
         { status: 400 }
       )
     }
 
-    // Email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    if (!emailRegex.test(email)) {
-      return NextResponse.json(
-        { error: "Invalid email address" },
-        { status: 400 }
-      )
-    }
+    // Log the contact form submission (in production, you'd save to database or send email)
+    console.log('📧 Contact Form Submission:', {
+      timestamp: new Date().toISOString(),
+      name,
+      email,
+      organization,
+      subject,
+      interests,
+      message: message.substring(0, 100) + (message.length > 100 ? '...' : '')
+    })
 
-    // In a real application, you would:
+    // In production, you would:
     // 1. Save to database
     // 2. Send email notification
     // 3. Send auto-reply to user
     
-    // Save the contact information
-    const contactData = {
-      name,
-      email,
-      organization,
-      subject,
-      message,
-      interests,
-      timestamp: new Date().toISOString()
-    }
-    
-    console.log('Contact form submission:', contactData)
-
-    // Send email notification to admin
-    const emailSent = await sendContactNotification({
-      name,
-      email,
-      organization,
-      subject,
-      message,
-      interests
-    })
-
-    // Send webhook notification (optional - for Slack, Discord, etc.)
-    await sendWebhookNotification('contact', contactData)
-
-    // TODO: Save to database
-    // const contact = await prisma.contact.create({
-    //   data: contactData
-    // })
-
-    // TODO: Send auto-reply to user
-    // await sendAutoReply(email, name)
-
+    // For now, simulate successful submission
     return NextResponse.json({
       success: true,
-      message: "Thank you for your message! I will get back to you within 24-48 hours.",
-      notificationSent: emailSent
+      message: 'Thank you for your message! I will get back to you soon.'
     })
 
-  } catch (error: any) {
+  } catch (error) {
     console.error('Contact form error:', error)
     return NextResponse.json(
-      { error: "Failed to send message. Please try again later." },
+      { error: 'An error occurred while sending your message. Please try again.' },
       { status: 500 }
     )
   }

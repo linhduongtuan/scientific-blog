@@ -443,55 +443,56 @@ button, a {
   -webkit-tap-highlight-color: transparent;
 }
 
-/* Math rendering styles */
-.math-display {
-  text-align: center !important;
-  margin: 1.5rem 0 !important;
+/* KaTeX Math Rendering Styles */
+.katex {
+  font-size: 1.1em;
+}
+
+.katex-display {
+  margin: 1.5rem 0;
+  text-align: center;
   overflow-x: auto;
+  overflow-y: hidden;
   padding: 0.5rem;
 }
 
-.math-inline {
-  display: inline !important;
-}
-
-.math-error {
-  color: #ef4444 !important;
-  background: #fef2f2 !important;
-  padding: 0.25rem !important;
-  border-radius: 0.25rem !important;
-  font-family: monospace !important;
-}
-
-.dark .math-error {
-  color: #f87171 !important;
-  background: #7f1d1d !important;
-}
-
-/* KaTeX styling improvements */
-.katex-display {
-  margin: 1.5em 0 !important;
-  text-align: center !important;
-}
-
-.katex {
-  font-size: 1.1em !important;
-}
-
-/* Ensure math content scrolls on small screens */
 .katex-display > .katex {
   display: inline-block;
   white-space: nowrap;
-  max-width: 100%;
-  overflow-x: auto;
-  text-align: initial;
 }
 
-/* Dark mode compatibility for KaTeX */
+/* Dark mode adjustments for KaTeX */
 .dark .katex {
-  color: rgb(229, 231, 235) !important;
+  color: #e5e7eb;
 }
 
-.dark .katex .base {
-  color: rgb(229, 231, 235) !important;
+.dark .katex .mord,
+.dark .katex .mop,
+.dark .katex .mrel,
+.dark .katex .mbin,
+.dark .katex .mpunct {
+  color: #e5e7eb;
+}
+
+.dark .katex .mfrac > span {
+  border-color: #9ca3af;
+}
+
+/* Math expression container styling */
+.math-expression {
+  transition: all 0.2s ease;
+}
+
+.math-expression:hover {
+  background-color: rgba(59, 130, 246, 0.1);
+  border-radius: 4px;
+}
+
+/* Responsive math display */
+@media (max-width: 768px) {
+  .katex-display {
+    font-size: 0.9em;
+    margin: 1rem 0;
+    padding: 0.25rem;
+  }
 }
