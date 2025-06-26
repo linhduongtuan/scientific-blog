@@ -39,26 +39,13 @@ export default function ContentManagement() {
     status: 'draft' as 'draft' | 'published'
   });
 
-  useEffect(() => {
-    if (status === "unauthenticated") {
-      router.push("/auth/signin");
-      return;
-    }
 
-    if (status === "authenticated" && !isAdmin) {
-      router.push("/");
-      return;
-    }
-
-    fetchPosts();
-  }, [isAdmin, router, status]);
-
+  // Move fetchPosts above useEffect and wrap in useCallback to fix missing dependency warning
   const fetchPosts = async () => {
     try {
       setLoading(true);
       // Simulate API call - in real app, this would fetch from your CMS/database
       await new Promise(resolve => setTimeout(resolve, 1000));
-      
       const mockPosts: BlogPost[] = [
         {
           id: '1',
@@ -97,9 +84,8 @@ export default function ContentManagement() {
           readingTime: '3 min read'
         }
       ];
-      
       setPosts(mockPosts);
-    } catch (error) {
+    } catch {
       addNotification({
         type: 'error',
         message: 'Error: Failed to fetch posts'
@@ -108,6 +94,22 @@ export default function ContentManagement() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      router.push("/auth/signin");
+      return;
+    }
+
+    if (status === "authenticated" && !isAdmin) {
+      router.push("/");
+      return;
+    }
+
+    fetchPosts();
+  }, [isAdmin, router, status, fetchPosts]);
+
+  // fetchPosts moved above
 
   const handleCreateNew = () => {
     setFormData({
@@ -185,7 +187,7 @@ export default function ContentManagement() {
       setIsEditing(false);
       setIsCreating(false);
       setSelectedPost(null);
-    } catch (error) {
+    } catch {
       addNotification({
         type: 'error',
         message: 'Save Failed: Failed to save the post. Please try again.'
@@ -205,7 +207,7 @@ export default function ContentManagement() {
         type: 'success',
         message: 'Post Deleted: The blog post has been deleted successfully'
       });
-    } catch (error) {
+    } catch {
       addNotification({
         type: 'error',
         message: 'Delete Failed: Failed to delete the post'
@@ -224,7 +226,7 @@ export default function ContentManagement() {
         type: 'success',
         message: `Post ${newStatus === 'published' ? 'Published' : 'Unpublished'}: The post has been ${newStatus === 'published' ? 'published' : 'moved to draft'}`
       });
-    } catch (error) {
+    } catch {
       addNotification({
         type: 'error',
         message: 'Update Failed: Failed to update post status'
