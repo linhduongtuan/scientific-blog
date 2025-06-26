@@ -17,11 +17,11 @@ export async function GET(
       where: {
         postId: postid,
       },
-      orderBy: {
-        createdAt: "desc",
-      },
+      orderBy: [
+        { created: "desc" }
+      ],
       include: {
-        user: {
+        author: {
           select: {
             id: true,
             name: true,
@@ -72,10 +72,10 @@ export async function POST(
       data: {
         content: validatedData.content,
         postId: validatedData.postId,
-        userId: (user as any)?.id || '1',
+        authorId: (user as any)?.id || '1',
       },
       include: {
-        user: {
+        author: {
           select: {
             id: true,
             name: true,

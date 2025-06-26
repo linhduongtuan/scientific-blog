@@ -89,7 +89,7 @@ export async function GET(
         ...USER_SELECT_FIELDS,
         _count: {
           select: {
-            comments: true
+            Comment: true
           }
         }
       }

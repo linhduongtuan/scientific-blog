@@ -1,3 +1,5 @@
+'use client'
+
 import React from 'react'
 import ErrorBoundary from '@/app/components/ErrorBoundary'
 
@@ -36,7 +38,7 @@ export class AppError extends Error {
       isOperational: this.isOperational,
       timestamp: this.timestamp.toISOString(),
       context: this.context,
-      ...(process.env.NODE_ENV === 'development' && { stack: this.stack })
+      ...(typeof window !== 'undefined' && process.env.NODE_ENV === 'development' && { stack: this.stack })
     }
   }
 }
@@ -71,10 +73,10 @@ export class ForbiddenError extends AppError {
 }
 
 // Enhanced async error handler with better error context
-export const handleAsyncError = <T extends unknown[], R>(
+export function handleAsyncError<T extends readonly unknown[], R>(
   fn: (...args: T) => Promise<R>,
   context?: string
-) => {
+) {
   return async (...args: T): Promise<R> => {
     try {
       return await fn(...args)
@@ -82,7 +84,7 @@ export const handleAsyncError = <T extends unknown[], R>(
       const errorContext = {
         functionName: fn.name || 'anonymous',
         context,
-        args: process.env.NODE_ENV === 'development' ? args : undefined
+        args: typeof window !== 'undefined' && process.env.NODE_ENV === 'development' ? args : undefined
       }
       
       console.error('Async operation failed:', {
@@ -107,10 +109,10 @@ export const handleAsyncError = <T extends unknown[], R>(
 }
 
 // Synchronous error handler
-export const handleSyncError = <T extends unknown[], R>(
+export function handleSyncError<T extends readonly unknown[], R>(
   fn: (...args: T) => R,
   context?: string
-) => {
+) {
   return (...args: T): R => {
     try {
       return fn(...args)
@@ -118,7 +120,7 @@ export const handleSyncError = <T extends unknown[], R>(
       const errorContext = {
         functionName: fn.name || 'anonymous',
         context,
-        args: process.env.NODE_ENV === 'development' ? args : undefined
+        args: typeof window !== 'undefined' && process.env.NODE_ENV === 'development' ? args : undefined
       }
       
       console.error('Sync operation failed:', {
@@ -143,64 +145,66 @@ export const handleSyncError = <T extends unknown[], R>(
 // Props for error boundary fallback components
 export interface ErrorFallbackProps {
   error: Error
-  resetError: () => void
+  resetErrorAction: () => void
   retry?: () => void
 }
 
 // Default error fallback component
 export const DefaultErrorFallback: React.FC<ErrorFallbackProps> = ({ 
   error, 
-  resetError 
-}) => (
-  <div className="min-h-[200px] flex items-center justify-center p-8">
-    <div className="text-center max-w-md">
-      <h2 className="text-xl font-semibold text-red-600 mb-2">
-        Something went wrong
-      </h2>
-      <p className="text-gray-600 mb-4">
-        {error instanceof AppError 
-          ? error.message 
-          : 'An unexpected error occurred'
-        }
-      </p>
-      <button
-        onClick={resetError}
-        className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
-      >
-        Try again
-      </button>
-      {process.env.NODE_ENV === 'development' && (
-        <details className="mt-4 text-left">
-          <summary className="cursor-pointer text-sm text-gray-500">
-            Error details (dev only)
-          </summary>
-          <pre className="mt-2 text-xs bg-gray-100 p-2 rounded overflow-auto">
-            {error.stack}
-          </pre>
-        </details>
-      )}
+  resetErrorAction 
+}) => {
+  const isDevelopment = typeof window !== 'undefined' && process.env.NODE_ENV === 'development'
+  
+  return (
+    <div className="min-h-[200px] flex items-center justify-center p-8">
+      <div className="text-center max-w-md">
+        <h2 className="text-xl font-semibold text-red-600 mb-2">
+          Something went wrong
+        </h2>
+        <p className="text-gray-600 mb-4">
+          {error instanceof AppError 
+            ? error.message 
+            : 'An unexpected error occurred'
+          }
+        </p>
+        <button
+          onClick={resetErrorAction}
+          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+        >
+          Try again
+        </button>
+        {isDevelopment && (
+          <details className="mt-4 text-left">
+            <summary className="cursor-pointer text-sm text-gray-500">
+              Error details (dev only)
+            </summary>
+            <pre className="mt-2 text-xs bg-gray-100 p-2 rounded overflow-auto">
+              {error.stack}
+            </pre>
+          </details>
+        )}
+      </div>
     </div>
-  </div>
-)
+  )
+}
 
 // Enhanced HOC with better prop handling and flexibility
-export const withErrorBoundary = <P extends Record<string, unknown>>(
+export function withErrorBoundary<P extends Record<string, any>>(
   Component: React.ComponentType<P>,
   options?: {
     fallback?: React.ComponentType<ErrorFallbackProps>
     onError?: (error: Error, errorInfo: React.ErrorInfo) => void
-    isolate?: boolean // Whether to isolate this component's errors
+    isolate?: boolean
   }
-) => {
-  const WrappedComponent = React.forwardRef<unknown, P>((props, ref) => {
+) {
+  const WrappedComponent = React.forwardRef<any, P>((props, ref) => {
     return React.createElement(
       ErrorBoundary,
       {
-        fallback: options?.fallback || DefaultErrorFallback,
-        onError: options?.onError,
-        isolate: options?.isolate
-      },
-      React.createElement(Component, { ...props, ref })
+        fallback: options?.fallback ? React.createElement(options.fallback) : <DefaultErrorFallback error={new AppError('Unknown error')} resetErrorAction={() => {}} />,
+        children: React.createElement(Component, { ...(props as P), ...(ref ? { ref } : {}) })
+      }
     )
   })
 
@@ -213,7 +217,7 @@ export const withErrorBoundary = <P extends Record<string, unknown>>(
 }
 
 // Hook for error handling in components
-export const useErrorHandler = () => {
+export function useErrorHandler() {
   const [error, setError] = React.useState<Error | null>(null)
 
   const handleError = React.useCallback((error: unknown) => {
@@ -252,12 +256,12 @@ export const useErrorHandler = () => {
 }
 
 // Utility to check if an error is operational (safe to show to users)
-export const isOperationalError = (error: unknown): boolean => {
+export function isOperationalError(error: unknown): boolean {
   return error instanceof AppError && error.isOperational
 }
 
 // Error logging utility
-export const logError = (error: unknown, context?: Record<string, unknown>) => {
+export function logError(error: unknown, context?: Record<string, unknown>) {
   const errorData = {
     timestamp: new Date().toISOString(),
     error: error instanceof Error ? {
@@ -272,7 +276,7 @@ export const logError = (error: unknown, context?: Record<string, unknown>) => {
   console.error('Application Error:', errorData)
   
   // In production, you might want to send this to an error tracking service
-  // if (process.env.NODE_ENV === 'production') {
+  // if (typeof window !== 'undefined' && process.env.NODE_ENV === 'production') {
   //   // Send to error tracking service (Sentry, LogRocket, etc.)
   // }
 }
