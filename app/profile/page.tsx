@@ -40,8 +40,12 @@ export default function ProfilePage() {
       
       setUpdateSuccess(true);
       // In a real implementation, you would call an API to update the user's profile
-    } catch (err: any) {
-      setError(err.message || "An error occurred while updating your profile");
+    } catch (err) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError("An error occurred while updating your profile");
+      }
     } finally {
       setLoading(false);
     }

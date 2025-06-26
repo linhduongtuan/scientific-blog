@@ -25,11 +25,11 @@ export default function OfflinePage() {
         </div>
         
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
-          You're Offline
+          You&apos;re Offline
         </h1>
         
         <p className="text-gray-600 dark:text-gray-400 mb-8">
-          It looks like you've lost your internet connection. Don't worry, you can still browse some cached content.
+          It looks like you&apos;ve lost your internet connection. Don&apos;t worry, you can still browse some cached content.
         </p>
         
         <div className="space-y-4">
