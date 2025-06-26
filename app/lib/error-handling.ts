@@ -33,13 +33,10 @@ export const withErrorBoundary = <P extends object>(
   fallback?: React.ComponentType<{ error: Error; resetError: () => void }>
 ) => {
   return function WithErrorBoundaryWrapper(props: P) {
-    // eslint-disable-next-line react/no-children-prop
     return React.createElement(
       ErrorBoundary,
-      {
-        fallback: fallback ? React.createElement(fallback, { error: new Error(), resetError: () => {} }) : undefined,
-        children: React.createElement(Component, props)
-      }
+      { fallback: fallback ? React.createElement(fallback, { error: new Error(), resetError: () => {} }) : undefined },
+      React.createElement(Component, props)
     )
   }
 }
