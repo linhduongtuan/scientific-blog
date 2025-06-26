@@ -1,6 +1,6 @@
 # Scientific Blog - Linh (Tuan) Duong
 
-A modern, feature-rich scientific blog platform showcasing research in computational pathology, AI for medical imaging, and data science. Built with Next.js 14, featuring real-time scientific metrics dashboard, advanced content management, and comprehensive PWA capabilities.
+A modern, feature-rich scientific blog platform showcasing research in computational pathology, AI for medical imaging, and data science. Built with Next.js 14, featuring real-time scientific metrics dashboard, advanced content management, real-time chat system, and comprehensive PWA capabilities.
 
 ## 🎓 About the Author
 
@@ -62,6 +62,21 @@ A modern, feature-rich scientific blog platform showcasing research in computati
 - **⚡ Real-time Updates**: Live notifications for user actions and system events
 - **📱 PWA Capabilities**: Offline support, install prompts, and native app-like experience
 
+### 💬 Real-time Chat System
+
+- **🎯 Multi-Channel Chat**: Switch between different topic-based chat rooms (general, tech, help)
+- **⚡ Real-time Messaging**: Instant message delivery with Socket.IO
+- **📎 File Sharing**: Upload and share images, documents, and media files
+- **😊 Message Reactions**: Add emoji reactions to messages with real-time updates
+- **🔍 Message Search**: Search through chat history with instant results
+- **👥 User Presence**: See who's typing and user online status
+- **💬 Reply Threads**: Reply to specific messages for organized conversations
+- **🎨 Rich UI**: Beautiful gradient design with animations and visual feedback
+- **📱 Mobile Responsive**: Optimized chat interface for all device sizes
+- **🔐 User Authentication**: Secure messaging with user identification
+- **👤 Anonymous Support**: Guest users can participate in chat
+- **🎛️ Admin Moderation**: Chat moderation panel for admin users
+
 ### 🚀 Performance & PWA
 
 - **📱 Progressive Web App**: Full PWA support with offline caching
@@ -79,6 +94,8 @@ A modern, feature-rich scientific blog platform showcasing research in computati
 - **Authentication**: NextAuth.js with role-based access
 - **Content**: MDX with syntax highlighting and rich components
 - **Charts**: Chart.js for scientific data visualization
+- **Real-time Communication**: Socket.IO for chat functionality
+- **File Upload**: Formidable with secure file handling
 - **PWA**: Service Worker with offline caching
 - **Notifications**: Custom toast system with persistence
 - **Deployment**: Vercel with automatic deployments
@@ -162,6 +179,9 @@ scientific-blog/
 │   │   ├── dashboard/     # Main admin dashboard
 │   │   └── content/       # Advanced content editor
 │   ├── api/               # API routes
+│   │   ├── socket/        # Socket.IO server for real-time chat
+│   │   ├── chat/          # Chat API endpoints (messages, rooms)
+│   │   └── upload/        # File upload API for chat attachments
 │   ├── auth/              # Authentication pages
 │   ├── blog/              # Blog pages and components
 │   ├── about/             # About page with researcher profile
@@ -170,6 +190,8 @@ scientific-blog/
 │   ├── publications/      # Academic publications list
 │   ├── components/        # Reusable components
 │   │   ├── ScientificDashboard.tsx  # Real-time metrics dashboard
+│   │   ├── Chat.tsx                 # Main chat component
+│   │   ├── ChatModerationPanel.tsx  # Admin chat moderation
 │   │   ├── ReadingProgress.tsx      # Reading progress indicator
 │   │   ├── SocialShare.tsx          # Social sharing buttons
 │   │   ├── TableOfContents.tsx      # Dynamic TOC
@@ -180,14 +202,26 @@ scientific-blog/
 │   ├── lib/               # Utility functions and configurations
 │   ├── offline/           # PWA offline page
 │   └── globals.css        # Global styles
+├── contexts/              # React contexts
+│   ├── ChatContext.tsx    # Chat state management and Socket.IO client
+│   ├── AuthContext.tsx    # Authentication context
+│   └── NotificationContext.tsx  # Notification system context
+├── types/                 # TypeScript type definitions
+│   └── socket.ts          # Socket.IO event types for chat
+├── scripts/               # Utility scripts
+│   ├── create-chat-test-users.js  # Create test users for chat
+│   ├── list-users.js              # List database users
+│   └── setup-db.js               # Database setup
 ├── public/                # Static assets
 │   ├── favicon.svg        # Custom scientific logo (SVG)
 │   ├── favicon.ico        # Browser favicon
 │   ├── manifest.json      # PWA manifest
 │   ├── sw.js             # Service worker
+│   ├── uploads/          # Chat file uploads directory
 │   └── icons/            # PWA icons (multiple sizes)
 ├── prisma/               # Database schema and migrations
-└── types/                # TypeScript type definitions
+│   └── schema.prisma     # Database models (includes ChatMessage, ChatReaction)
+└── test-chat-fixes.sh    # Chat functionality testing script
 ```
 
 ## 📜 Available Scripts
@@ -200,6 +234,12 @@ scientific-blog/
 - `npm run db:studio` - Open Prisma Studio
 - `npm run generate-icons` - Generate PWA icon placeholders
 - `npm run test:auth` - Test authentication functionality
+
+### 🧪 Chat Testing Scripts
+
+- `./test-chat-fixes.sh` - Test all chat functionality and API endpoints
+- `node scripts/create-chat-test-users.js` - Create test users for multi-user chat testing
+- `node scripts/list-users.js` - List all users in the database
 
 ## 🎯 Live Features
 
@@ -258,6 +298,51 @@ Visit these pages to explore the implemented features:
 - **Admin Dashboard**: `/admin/dashboard` - Admin interface (requires admin role)
 - **Content Editor**: `/admin/content` - Advanced content management
 - **PWA**: Check for install prompt on supported browsers
+
+### 💬 Chat System Testing
+
+#### Quick Test
+```bash
+# Run automated chat functionality tests
+./test-chat-fixes.sh
+```
+
+#### Multi-User Testing
+
+1. **Create test users** (if not already created):
+   ```bash
+   node scripts/create-chat-test-users.js
+   ```
+
+2. **Available test accounts**:
+   - `admin@example.com / admin123` (Admin)
+   - `alice@example.com / alice123` (User)
+   - `bob@example.com / bob123` (User)
+   - `charlie@example.com / charlie123` (User)
+
+3. **Testing methods**:
+   - **Different browsers**: Chrome + Firefox with different accounts
+   - **Incognito windows**: Regular + incognito with different accounts
+   - **Same browser**: Sign in/out with different accounts sequentially
+
+#### What to Test
+
+- ✅ **Real-time messaging**: Send messages and see them appear instantly in other browsers
+- ✅ **Channel switching**: Switch between channels (general, tech, help) and verify content updates
+- ✅ **File uploads**: Upload images/documents and see them appear for other users
+- ✅ **Message reactions**: Add emoji reactions and see real-time updates
+- ✅ **Message search**: Search through chat history for specific messages
+- ✅ **Typing indicators**: Start typing and see indicators in other browsers
+- ✅ **User identification**: Verify different usernames and avatars display correctly
+
+#### Debug Information
+
+Check browser console (F12) for these logs:
+- `✅ Connected to chat server` - Connection established
+- `📤 Send button clicked` - Message sending
+- `📎 Attach button clicked` - File uploads
+- `🔍 Search button clicked` - Message search
+- `🏠 Switching to room` - Channel changes
 
 ## 🤝 Contributing
 
