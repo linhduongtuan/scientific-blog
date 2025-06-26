@@ -1,0 +1,1321 @@
+---
+title: "Astronomical Data Analysis: From Exoplanet Detection to Gravitational Waves"
+date: "2025-06-30"
+author: "Dr. Elena Vasquez"
+excerpt: "Comprehensive guide to modern astronomical data analysis techniques, including exoplanet detection algorithms, stellar classification using machine learning, and gravitational wave signal processing."
+tags: ["Astronomy", "Astrophysics", "Data Science", "Machine Learning", "Signal Processing"]
+coverImage: "/images/astronomical-data.jpg"
+readingTime: "22 min read"
+---
+
+# Astronomical Data Analysis: From Exoplanet Detection to Gravitational Waves
+
+Modern astronomy generates unprecedented amounts of data, from ground-based telescopes to space missions like Kepler, TESS, and LIGO. This comprehensive guide explores advanced computational techniques for extracting scientific insights from astronomical observations.
+
+## Mathematical Foundations of Astronomical Data Analysis
+
+### Kepler's Laws and Orbital Mechanics
+
+The fundamental equations governing planetary motion:
+
+**First Law (Elliptical Orbits):**
+$$r = \frac{a(1-e^2)}{1 + e\cos(\nu)}$$
+
+Where $r$ is the radial distance, $a$ is the semi-major axis, $e$ is eccentricity, and $\nu$ is the true anomaly.
+
+**Second Law (Equal Areas):**
+$$\frac{dA}{dt} = \frac{1}{2}r^2\frac{d\nu}{dt} = \text{constant}$$
+
+**Third Law (Harmonic Law):**
+$$P^2 = \frac{4\pi^2}{GM}a^3$$
+
+Where $P$ is the orbital period, $G$ is the gravitational constant, and $M$ is the central mass.
+
+### Transit Photometry and Light Curves
+
+The transit depth for an exoplanet is given by:
+
+$$\Delta F = \left(\frac{R_p}{R_*}\right)^2$$
+
+Where $R_p$ is the planet radius and $R_*$ is the stellar radius.
+
+The transit duration is:
+$$T_{dur} = \frac{P}{\pi} \arcsin\left(\frac{R_*}{a}\sqrt{(1+k)^2 - b^2}\right)$$
+
+Where $k = R_p/R_*$, $b$ is the impact parameter, and $a$ is the orbital separation.
+
+### Stellar Classification and the Hertzsprung-Russell Diagram
+
+The Stefan-Boltzmann law relates luminosity to temperature:
+
+$$L = 4\pi R^2 \sigma T_{eff}^4$$
+
+The main sequence mass-luminosity relation:
+$$\frac{L}{L_{\odot}} = \left(\frac{M}{M_{\odot}}\right)^{\alpha}$$
+
+Where $\alpha \approx 3.5$ for solar-type stars.
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/0rHUDWjR5gg" title="Exoplanet Detection Methods" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+
+*Modern techniques for detecting and characterizing exoplanets*
+
+## Exoplanet Detection Algorithms
+
+### Transit Detection Pipeline
+
+```python
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy import signal, optimize
+from astropy.io import fits
+from astropy.timeseries import LombScargle
+import pandas as pd
+from sklearn.ensemble import IsolationForest
+from scipy.signal import find_peaks
+
+class ExoplanetDetector:
+    def __init__(self, time_threshold=0.1, depth_threshold=0.001):
+        self.time_threshold = time_threshold  # days
+        self.depth_threshold = depth_threshold  # relative flux
+        self.candidates = []
+    
+    def load_lightcurve(self, filename=None, simulate=True):
+        """Load or simulate light curve data"""
+        
+        if simulate:
+            # Generate synthetic Kepler-like data
+            time = np.linspace(0, 90, 4000)  # 90 days, 30-min cadence
+            
+            # Stellar variability (rotation, spots)
+            stellar_period = 25.0  # days
+            stellar_variability = 0.002 * np.sin(2 * np.pi * time / stellar_period)
+            
+            # Add some random stellar activity
+            stellar_noise = 0.001 * np.random.randn(len(time))
+            
+            # Instrumental noise
+            photon_noise = 0.0005 * np.random.randn(len(time))
+            
+            # Base stellar flux (normalized to 1)
+            flux = 1.0 + stellar_variability + stellar_noise + photon_noise
+            
+            # Add transit signal
+            transit_period = 5.2  # days
+            transit_duration = 0.2  # days
+            transit_depth = 0.005  # 0.5% depth
+            
+            flux = self.add_transit_signal(
+                time, flux, transit_period, transit_duration, transit_depth
+            )
+            
+            return time, flux
+        else:
+            # Load real data (placeholder)
+            # In practice, would load FITS files from MAST
+            pass
+    
+    def add_transit_signal(self, time, flux, period, duration, depth):
+        """Add synthetic transit signal to light curve"""
+        
+        transit_flux = flux.copy()
+        
+        # Calculate transit times
+        transit_times = np.arange(0, time[-1], period)
+        
+        for t_transit in transit_times:
+            # Define transit shape (simplified box model)
+            transit_mask = np.abs(time - t_transit) < duration/2
+            
+            # Add ingress/egress (trapezoidal shape)
+            ingress_time = duration * 0.1  # 10% of duration for ingress/egress
+            
+            for i, t in enumerate(time):
+                dt = abs(t - t_transit)
+                if dt < duration/2:
+                    if dt < duration/2 - ingress_time:
+                        # In transit (flat bottom)
+                        transit_flux[i] -= depth
+                    else:
+                        # Ingress/egress (linear transition)
+                        fade_factor = (duration/2 - dt) / ingress_time
+                        transit_flux[i] -= depth * fade_factor
+        
+        return transit_flux
+    
+    def detrend_lightcurve(self, time, flux, window_length=1.0):
+        """Remove long-term trends from light curve"""
+        
+        # Method 1: Median filter detrending
+        from scipy.ndimage import median_filter
+        
+        # Convert window length to points
+        dt = np.median(np.diff(time))
+        window_points = int(window_length / dt)
+        
+        # Ensure odd window size
+        if window_points % 2 == 0:
+            window_points += 1
+        
+        trend = median_filter(flux, size=window_points)
+        detrended_flux = flux / trend
+        
+        return detrended_flux, trend
+    
+    def detect_transits_bls(self, time, flux, period_range=(1, 20), 
+                           duration_range=(0.05, 0.5)):
+        """Box Least Squares transit detection"""
+        
+        periods = np.logspace(
+            np.log10(period_range[0]), 
+            np.log10(period_range[1]), 
+            1000
+        )
+        
+        best_period = 0
+        best_power = 0
+        best_t0 = 0
+        best_duration = 0
+        
+        for period in periods:
+            # Phase fold the data
+            phases = ((time % period) / period) * 2 * np.pi
+            
+            # Try different transit durations
+            durations = np.linspace(duration_range[0], duration_range[1], 20)
+            
+            for duration in durations:
+                # Create box model
+                duration_phase = (duration / period) * 2 * np.pi
+                
+                # Test different phase offsets
+                phase_offsets = np.linspace(0, 2*np.pi, 50)
+                
+                for phase_offset in phase_offsets:
+                    # Define in-transit and out-of-transit phases
+                    in_transit = np.abs(
+                        (phases - phase_offset + np.pi) % (2*np.pi) - np.pi
+                    ) < duration_phase/2
+                    
+                    if np.sum(in_transit) < 3:  # Need at least 3 points
+                        continue
+                    
+                    # Calculate BLS statistic
+                    flux_in = np.mean(flux[in_transit])
+                    flux_out = np.mean(flux[~in_transit])
+                    
+                    # Signal-to-noise ratio
+                    noise_in = np.std(flux[in_transit])
+                    noise_out = np.std(flux[~in_transit])
+                    
+                    if noise_in > 0 and noise_out > 0:
+                        snr = (flux_out - flux_in) / np.sqrt(
+                            noise_in**2/np.sum(in_transit) + 
+                            noise_out**2/np.sum(~in_transit)
+                        )
+                        
+                        if snr > best_power:
+                            best_power = snr
+                            best_period = period
+                            best_t0 = phase_offset * period / (2 * np.pi)
+                            best_duration = duration
+        
+        return {
+            'period': best_period,
+            'power': best_power,
+            't0': best_t0,
+            'duration': best_duration
+        }
+    
+    def characterize_transit(self, time, flux, period, t0, duration):
+        """Detailed characterization of detected transit"""
+        
+        # Phase fold the data
+        phase = ((time - t0) % period) / period
+        phase[phase > 0.5] -= 1  # Center on transit
+        
+        # Sort by phase
+        sort_indices = np.argsort(phase)
+        phase_sorted = phase[sort_indices]
+        flux_sorted = flux[sort_indices]
+        
+        # Fit detailed transit model
+        def transit_model(phase, depth, duration_fit, baseline):
+            """Simple trapezoidal transit model"""
+            model = np.ones_like(phase) * baseline
+            
+            # In-transit phases
+            in_transit = np.abs(phase) < duration_fit/(2*period)
+            model[in_transit] = baseline - depth
+            
+            return model
+        
+        # Fit parameters
+        try:
+            popt, pcov = optimize.curve_fit(
+                transit_model,
+                phase_sorted,
+                flux_sorted,
+                p0=[0.005, duration, 1.0],  # depth, duration, baseline
+                bounds=([0, 0.01, 0.95], [0.1, 1.0, 1.05])
+            )
+            
+            depth_fit, duration_fit, baseline_fit = popt
+            depth_err, duration_err, baseline_err = np.sqrt(np.diag(pcov))
+            
+        except:
+            depth_fit, duration_fit, baseline_fit = 0.005, duration, 1.0
+            depth_err, duration_err, baseline_err = 0.001, 0.05, 0.001
+        
+        return {
+            'depth': depth_fit,
+            'depth_error': depth_err,
+            'duration': duration_fit,
+            'duration_error': duration_err,
+            'baseline': baseline_fit,
+            'phase': phase_sorted,
+            'flux': flux_sorted
+        }
+    
+    def calculate_planet_properties(self, period, depth, duration, stellar_params):
+        """Calculate physical properties of the planet"""
+        
+        # Stellar parameters
+        R_star = stellar_params.get('radius', 1.0)  # Solar radii
+        M_star = stellar_params.get('mass', 1.0)    # Solar masses
+        T_star = stellar_params.get('temperature', 5778)  # Kelvin
+        
+        # Planet radius
+        R_planet = R_star * np.sqrt(depth)  # in stellar radii
+        R_planet_earth = R_planet * 695700 / 6371  # in Earth radii
+        
+        # Semi-major axis from Kepler's third law
+        G = 6.67430e-11  # m^3 kg^-1 s^-2
+        M_sun = 1.98847e30  # kg
+        period_seconds = period * 24 * 3600
+        
+        a_meters = ((G * M_star * M_sun * period_seconds**2) / (4 * np.pi**2))**(1/3)
+        a_au = a_meters / 1.496e11  # AU
+        
+        # Equilibrium temperature (assuming albedo = 0)
+        T_eq = T_star * np.sqrt(R_star * 695700e3 / (2 * a_meters))
+        
+        # Orbital velocity
+        v_orbit = 2 * np.pi * a_meters / period_seconds / 1000  # km/s
+        
+        return {
+            'radius_earth': R_planet_earth,
+            'semi_major_axis_au': a_au,
+            'equilibrium_temperature': T_eq,
+            'orbital_velocity': v_orbit
+        }
+
+# Example exoplanet detection
+detector = ExoplanetDetector()
+
+# Load/simulate data
+time, flux = detector.load_lightcurve(simulate=True)
+print(f"Loaded light curve: {len(time)} data points over {time[-1]:.1f} days")
+
+# Detrend the light curve
+detrended_flux, trend = detector.detrend_lightcurve(time, flux)
+print("Light curve detrended")
+
+# Detect transits
+transit_result = detector.detect_transits_bls(time, detrended_flux)
+print(f"Transit detection results:")
+print(f"  Period: {transit_result['period']:.3f} days")
+print(f"  Power: {transit_result['power']:.2f}")
+print(f"  Duration: {transit_result['duration']:.3f} days")
+
+# Characterize the transit
+characterization = detector.characterize_transit(
+    time, detrended_flux, 
+    transit_result['period'], 
+    transit_result['t0'], 
+    transit_result['duration']
+)
+
+print(f"Transit characterization:")
+print(f"  Depth: {characterization['depth']*100:.2f}% ± {characterization['depth_error']*100:.2f}%")
+print(f"  Duration: {characterization['duration']*24:.1f} ± {characterization['duration_error']*24:.1f} hours")
+
+# Calculate planet properties
+stellar_params = {
+    'radius': 1.0,    # Solar radii
+    'mass': 1.0,      # Solar masses  
+    'temperature': 5778  # Kelvin
+}
+
+planet_props = detector.calculate_planet_properties(
+    transit_result['period'],
+    characterization['depth'],
+    characterization['duration'],
+    stellar_params
+)
+
+print(f"Planet properties:")
+print(f"  Radius: {planet_props['radius_earth']:.2f} Earth radii")
+print(f"  Semi-major axis: {planet_props['semi_major_axis_au']:.3f} AU")
+print(f"  Equilibrium temperature: {planet_props['equilibrium_temperature']:.0f} K")
+print(f"  Orbital velocity: {planet_props['orbital_velocity']:.1f} km/s")
+```
+
+### Advanced Transit Analysis
+
+```python
+def transit_model_batman(time, period, t0, rp_rs, a_rs, inc, ecc=0, w=90):
+    """Advanced transit model using batman package"""
+    
+    try:
+        import batman
+        
+        # Initialize batman parameters
+        params = batman.TransitParams()
+        params.t0 = t0                    # Time of transit center
+        params.per = period               # Orbital period
+        params.rp = rp_rs                 # Planet radius (stellar radii)
+        params.a = a_rs                   # Semi-major axis (stellar radii)
+        params.inc = inc                  # Orbital inclination (degrees)
+        params.ecc = ecc                  # Eccentricity
+        params.w = w                      # Longitude of periastron (degrees)
+        params.limb_dark = "quadratic"    # Limb darkening model
+        params.u = [0.1, 0.3]            # Limb darkening coefficients
+        
+        # Initialize the model
+        m = batman.TransitModel(params, time)
+        
+        # Calculate transit model
+        flux_model = m.light_curve(params)
+        
+        return flux_model
+        
+    except ImportError:
+        print("batman-package not available, using simplified model")
+        return np.ones_like(time)
+
+def mcmc_transit_fit(time, flux, flux_err, initial_params):
+    """MCMC fitting of transit parameters"""
+    
+    try:
+        import emcee
+        
+        def log_likelihood(theta, time, flux, flux_err):
+            period, t0, rp_rs, a_rs, inc = theta
+            
+            # Calculate model
+            model = transit_model_batman(time, period, t0, rp_rs, a_rs, inc)
+            
+            # Log likelihood
+            chi2 = np.sum(((flux - model) / flux_err)**2)
+            return -0.5 * chi2
+        
+        def log_prior(theta):
+            period, t0, rp_rs, a_rs, inc = theta
+            
+            # Uniform priors
+            if (1 < period < 50 and 
+                time[0] < t0 < time[-1] and
+                0 < rp_rs < 0.3 and
+                1 < a_rs < 100 and
+                70 < inc < 90):
+                return 0.0
+            return -np.inf
+        
+        def log_probability(theta, time, flux, flux_err):
+            lp = log_prior(theta)
+            if not np.isfinite(lp):
+                return -np.inf
+            return lp + log_likelihood(theta, time, flux, flux_err)
+        
+        # Initialize walkers
+        ndim = 5
+        nwalkers = 32
+        
+        # Starting positions around initial guess
+        pos = initial_params + 1e-4 * np.random.randn(nwalkers, ndim)
+        
+        # Run MCMC
+        sampler = emcee.EnsembleSampler(
+            nwalkers, ndim, log_probability, 
+            args=(time, flux, flux_err)
+        )
+        
+        sampler.run_mcmc(pos, 2000, progress=True)
+        
+        # Get results
+        samples = sampler.get_chain(discard=500, flat=True)
+        
+        # Calculate parameter estimates
+        param_names = ['period', 't0', 'rp_rs', 'a_rs', 'inc']
+        results = {}
+        
+        for i, name in enumerate(param_names):
+            results[name] = {
+                'value': np.median(samples[:, i]),
+                'error_lower': np.percentile(samples[:, i], 16),
+                'error_upper': np.percentile(samples[:, i], 84)
+            }
+        
+        return results, samples
+        
+    except ImportError:
+        print("emcee not available, skipping MCMC fit")
+        return {}, []
+
+print("Advanced transit analysis functions defined")
+```
+
+## Stellar Classification and Machine Learning
+
+### Automated Stellar Classification
+
+```python
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import classification_report, confusion_matrix
+import seaborn as sns
+
+class StellarClassifier:
+    def __init__(self):
+        self.model = None
+        self.scaler = StandardScaler()
+        self.feature_names = []
+        self.classes = ['O', 'B', 'A', 'F', 'G', 'K', 'M']
+    
+    def generate_stellar_features(self, n_stars=1000):
+        """Generate synthetic stellar photometry data"""
+        
+        # Stellar classes with typical properties
+        stellar_types = {
+            'O': {'temp': (30000, 50000), 'color': (-0.4, -0.2)},
+            'B': {'temp': (10000, 30000), 'color': (-0.2, 0.0)},
+            'A': {'temp': (7500, 10000), 'color': (0.0, 0.3)},
+            'F': {'temp': (6000, 7500), 'color': (0.3, 0.5)},
+            'G': {'temp': (5200, 6000), 'color': (0.5, 0.7)},
+            'K': {'temp': (3700, 5200), 'color': (0.7, 1.2)},
+            'M': {'temp': (2400, 3700), 'color': (1.2, 2.0)}
+        }
+        
+        features = []
+        labels = []
+        
+        for class_name, props in stellar_types.items():
+            n_class = n_stars // len(stellar_types)
+            
+            for _ in range(n_class):
+                # Temperature
+                temp = np.random.uniform(props['temp'][0], props['temp'][1])
+                
+                # B-V color
+                bv_color = np.random.uniform(props['color'][0], props['color'][1])
+                
+                # Derived properties
+                # Absolute magnitude (main sequence relation)
+                if class_name in ['O', 'B']:
+                    abs_mag = np.random.uniform(-5, -2)
+                elif class_name in ['A', 'F']:
+                    abs_mag = np.random.uniform(-1, 3)
+                elif class_name == 'G':
+                    abs_mag = np.random.uniform(3, 6)
+                elif class_name == 'K':
+                    abs_mag = np.random.uniform(6, 9)
+                else:  # M
+                    abs_mag = np.random.uniform(9, 16)
+                
+                # Surface gravity (log g)
+                if class_name in ['O', 'B', 'A']:
+                    log_g = np.random.uniform(3.5, 4.5)
+                else:
+                    log_g = np.random.uniform(4.0, 5.0)
+                
+                # Metallicity [Fe/H]
+                metallicity = np.random.normal(0, 0.3)
+                
+                # Add photometric bands (UBVRI)
+                u_mag = abs_mag + np.random.normal(0, 0.1)
+                b_mag = abs_mag + np.random.normal(0, 0.1)
+                v_mag = abs_mag + np.random.normal(0, 0.1)
+                r_mag = abs_mag + np.random.normal(0, 0.1)
+                i_mag = abs_mag + np.random.normal(0, 0.1)
+                
+                # Color indices
+                ub_color = u_mag - b_mag
+                bv_color_noise = bv_color + np.random.normal(0, 0.02)
+                vr_color = v_mag - r_mag
+                ri_color = r_mag - i_mag
+                
+                feature_vector = [
+                    temp, log_g, metallicity, abs_mag,
+                    u_mag, b_mag, v_mag, r_mag, i_mag,
+                    ub_color, bv_color_noise, vr_color, ri_color
+                ]
+                
+                features.append(feature_vector)
+                labels.append(class_name)
+        
+        self.feature_names = [
+            'temperature', 'log_g', 'metallicity', 'abs_magnitude',
+            'u_mag', 'b_mag', 'v_mag', 'r_mag', 'i_mag',
+            'u_b_color', 'b_v_color', 'v_r_color', 'r_i_color'
+        ]
+        
+        return np.array(features), np.array(labels)
+    
+    def train_classifier(self, features, labels):
+        """Train stellar classification model"""
+        
+        # Split data
+        X_train, X_test, y_train, y_test = train_test_split(
+            features, labels, test_size=0.2, random_state=42, stratify=labels
+        )
+        
+        # Scale features
+        X_train_scaled = self.scaler.fit_transform(X_train)
+        X_test_scaled = self.scaler.transform(X_test)
+        
+        # Train Random Forest
+        self.model = RandomForestClassifier(
+            n_estimators=200,
+            max_depth=15,
+            random_state=42,
+            class_weight='balanced'
+        )
+        
+        self.model.fit(X_train_scaled, y_train)
+        
+        # Evaluate
+        y_pred = self.model.predict(X_test_scaled)
+        
+        print("Stellar Classification Results:")
+        print(classification_report(y_test, y_pred))
+        
+        # Feature importance
+        importance_df = pd.DataFrame({
+            'feature': self.feature_names,
+            'importance': self.model.feature_importances_
+        }).sort_values('importance', ascending=False)
+        
+        return X_test_scaled, y_test, y_pred, importance_df
+    
+    def plot_hr_diagram(self, features, labels):
+        """Create Hertzsprung-Russell diagram"""
+        
+        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 6))
+        
+        # Extract relevant features
+        temp_idx = self.feature_names.index('temperature')
+        abs_mag_idx = self.feature_names.index('abs_magnitude')
+        bv_color_idx = self.feature_names.index('b_v_color')
+        
+        temperatures = features[:, temp_idx]
+        abs_magnitudes = features[:, abs_mag_idx]
+        bv_colors = features[:, bv_color_idx]
+        
+        # Color mapping for stellar classes
+        color_map = {
+            'O': 'blue', 'B': 'lightblue', 'A': 'white', 'F': 'yellow',
+            'G': 'orange', 'K': 'red', 'M': 'darkred'
+        }
+        
+        # Temperature vs Absolute Magnitude
+        for class_name in self.classes:
+            mask = labels == class_name
+            ax1.scatter(
+                temperatures[mask], abs_magnitudes[mask],
+                c=color_map[class_name], label=class_name, alpha=0.7, s=20
+            )
+        
+        ax1.set_xlabel('Temperature (K)')
+        ax1.set_ylabel('Absolute Magnitude')
+        ax1.set_title('Hertzsprung-Russell Diagram')
+        ax1.invert_yaxis()  # Brighter stars at top
+        ax1.invert_xaxis()  # Hotter stars on left
+        ax1.legend()
+        ax1.grid(True, alpha=0.3)
+        
+        # Color-Magnitude Diagram
+        for class_name in self.classes:
+            mask = labels == class_name
+            ax2.scatter(
+                bv_colors[mask], abs_magnitudes[mask],
+                c=color_map[class_name], label=class_name, alpha=0.7, s=20
+            )
+        
+        ax2.set_xlabel('B-V Color Index')
+        ax2.set_ylabel('Absolute Magnitude')
+        ax2.set_title('Color-Magnitude Diagram')
+        ax2.invert_yaxis()
+        ax2.legend()
+        ax2.grid(True, alpha=0.3)
+        
+        plt.tight_layout()
+        return fig
+
+# Example stellar classification
+print("Generating synthetic stellar data...")
+classifier = StellarClassifier()
+features, labels = classifier.generate_stellar_features(n_stars=2000)
+
+print(f"Generated {len(features)} stellar observations")
+print(f"Features: {classifier.feature_names}")
+print(f"Classes: {np.unique(labels)}")
+
+# Train classifier
+X_test, y_test, y_pred, importance = classifier.train_classifier(features, labels)
+
+# Create H-R diagram
+hr_fig = classifier.plot_hr_diagram(features, labels)
+plt.show()
+
+print("\nTop 5 Most Important Features:")
+print(importance.head())
+```
+
+## Gravitational Wave Data Analysis
+
+### LIGO Signal Processing
+
+```python
+class GWDetector:
+    """Gravitational Wave Signal Processing"""
+    
+    def __init__(self, sampling_rate=4096):
+        self.fs = sampling_rate
+        self.strain_data = None
+        self.templates = {}
+    
+    def load_gw_data(self, filename=None, simulate=True):
+        """Load or simulate gravitational wave strain data"""
+        
+        if simulate:
+            # Simulate LIGO-like noise
+            duration = 4.0  # seconds
+            time = np.linspace(0, duration, int(duration * self.fs))
+            
+            # Colored noise (simplified LIGO noise model)
+            # Real LIGO noise has specific frequency dependence
+            white_noise = np.random.randn(len(time))
+            
+            # Apply frequency-dependent weighting
+            freqs = np.fft.fftfreq(len(time), 1/self.fs)
+            noise_fft = np.fft.fft(white_noise)
+            
+            # Simplified noise power spectral density
+            # Real LIGO uses detailed calibration
+            noise_psd = np.ones_like(freqs)
+            noise_psd[np.abs(freqs) < 20] = 100  # Low frequency noise
+            noise_psd[np.abs(freqs) > 1000] = 10  # High frequency noise
+            
+            colored_noise_fft = noise_fft * np.sqrt(noise_psd)
+            strain = np.real(np.fft.ifft(colored_noise_fft)) * 1e-21
+            
+            # Add a simulated GW signal
+            strain = self.add_chirp_signal(time, strain)
+            
+            return time, strain
+        else:
+            # Load real LIGO data (would use gwpy in practice)
+            pass
+    
+    def add_chirp_signal(self, time, strain, m1=30, m2=30, distance=400):
+        """Add binary black hole chirp signal"""
+        
+        # Simplified chirp waveform
+        # Real analysis uses sophisticated waveform models
+        
+        # Total mass and chirp mass
+        M_total = m1 + m2  # Solar masses
+        M_chirp = (m1 * m2)**(3/5) / (m1 + m2)**(1/5)
+        
+        # Convert to geometric units
+        M_sun = 1.989e30  # kg
+        c = 299792458  # m/s
+        G = 6.67430e-11  # m^3 kg^-1 s^-2
+        
+        M_total_geo = M_total * M_sun * G / c**3  # seconds
+        M_chirp_geo = M_chirp * M_sun * G / c**3
+        
+        # Merger time (place at end of observation)
+        t_merger = time[-1] - 0.2
+        
+        # Phase evolution
+        t_to_merger = t_merger - time
+        t_to_merger[t_to_merger <= 0] = 1e-10  # Avoid division by zero
+        
+        # Frequency evolution (post-Newtonian approximation)
+        freq_inst = (1 / (8 * np.pi)) * (5/(256 * M_chirp_geo))**(3/8) * \
+                   t_to_merger**(-3/8)
+        
+        # Only include frequencies in LIGO band
+        valid_freq = (freq_inst > 20) & (freq_inst < 1000)
+        
+        # Amplitude (distance-dependent)
+        h0 = (5/24)**(1/2) * (1/np.pi)**(2/3) * (G*M_chirp_geo/c**2)**(5/6) / \
+             (distance * 1e6 * 3.086e16)  # Distance in Mpc -> meters
+        
+        amplitude = h0 * (G*M_chirp_geo/c**2)**(1/4) * \
+                   (np.pi * freq_inst)**(-7/6)
+        
+        # Phase
+        phase = 2 * np.pi * np.cumsum(freq_inst) / self.fs
+        
+        # Waveform (plus polarization)
+        h_plus = amplitude * np.cos(phase)
+        h_plus[~valid_freq] = 0
+        
+        return strain + h_plus
+    
+    def generate_template_bank(self, mass_range=(10, 100), n_templates=100):
+        """Generate template bank for matched filtering"""
+        
+        templates = {}
+        
+        # Create grid of masses
+        masses = np.linspace(mass_range[0], mass_range[1], 
+                           int(np.sqrt(n_templates)))
+        
+        template_id = 0
+        for m1 in masses:
+            for m2 in masses:
+                if m1 >= m2:  # m1 >= m2 by convention
+                    # Generate template waveform
+                    duration = 4.0
+                    time = np.linspace(0, duration, int(duration * self.fs))
+                    
+                    # Use same chirp generation as signal
+                    template_strain = np.zeros_like(time)
+                    template_strain = self.add_chirp_signal(
+                        time, template_strain, m1, m2, distance=1
+                    )
+                    
+                    templates[template_id] = {
+                        'm1': m1,
+                        'm2': m2,
+                        'waveform': template_strain,
+                        'time': time
+                    }
+                    
+                    template_id += 1
+                    
+                    if template_id >= n_templates:
+                        break
+            if template_id >= n_templates:
+                break
+        
+        self.templates = templates
+        return templates
+    
+    def matched_filter(self, strain, template_waveform):
+        """Perform matched filtering with a template"""
+        
+        # FFT of data and template
+        strain_fft = np.fft.fft(strain)
+        template_fft = np.fft.fft(template_waveform)
+        
+        # Cross-correlation in frequency domain
+        correlation_fft = strain_fft * np.conj(template_fft)
+        
+        # Back to time domain
+        correlation = np.fft.ifft(correlation_fft)
+        
+        # Signal-to-noise ratio
+        # Simplified - real analysis uses noise PSD weighting
+        snr = np.abs(correlation) / np.std(np.abs(correlation))
+        
+        return snr, correlation
+    
+    def detect_gw_signals(self, strain, threshold=5.0):
+        """Detect gravitational wave signals using template bank"""
+        
+        if not self.templates:
+            print("Generating template bank...")
+            self.generate_template_bank()
+        
+        best_matches = []
+        
+        for template_id, template_data in self.templates.items():
+            snr, correlation = self.matched_filter(
+                strain, template_data['waveform']
+            )
+            
+            # Find peaks above threshold
+            peaks, _ = find_peaks(snr, height=threshold)
+            
+            for peak in peaks:
+                best_matches.append({
+                    'template_id': template_id,
+                    'time_index': peak,
+                    'snr': snr[peak],
+                    'm1': template_data['m1'],
+                    'm2': template_data['m2']
+                })
+        
+        # Sort by SNR
+        best_matches = sorted(best_matches, key=lambda x: x['snr'], reverse=True)
+        
+        return best_matches
+    
+    def parameter_estimation(self, strain, time, detection_result):
+        """Estimate parameters of detected signal"""
+        
+        # This would typically use MCMC sampling
+        # Simplified version here
+        
+        best_template_id = detection_result['template_id']
+        template_data = self.templates[best_template_id]
+        
+        # Time of arrival
+        t_arrival = time[detection_result['time_index']]
+        
+        # Mass estimates (from template)
+        m1_est = template_data['m1']
+        m2_est = template_data['m2']
+        
+        # Chirp mass
+        M_chirp = (m1_est * m2_est)**(3/5) / (m1_est + m2_est)**(1/5)
+        
+        # Total mass
+        M_total = m1_est + m2_est
+        
+        # Symmetric mass ratio
+        eta = (m1_est * m2_est) / (m1_est + m2_est)**2
+        
+        # Distance estimate (simplified)
+        # Real analysis uses calibrated amplitude
+        snr_obs = detection_result['snr']
+        distance_est = 400 * (8.0 / snr_obs)  # Rough scaling
+        
+        return {
+            'mass_1': m1_est,
+            'mass_2': m2_est,
+            'chirp_mass': M_chirp,
+            'total_mass': M_total,
+            'mass_ratio': eta,
+            'luminosity_distance': distance_est,
+            'arrival_time': t_arrival,
+            'snr': snr_obs
+        }
+
+# Example gravitational wave analysis
+print("Initializing gravitational wave detector...")
+gw_detector = GWDetector()
+
+# Load/simulate data
+time_gw, strain_gw = gw_detector.load_gw_data(simulate=True)
+print(f"Loaded strain data: {len(strain_gw)} samples at {gw_detector.fs} Hz")
+
+# Detect signals
+print("Detecting gravitational wave signals...")
+detections = gw_detector.detect_gw_signals(strain_gw, threshold=6.0)
+
+if detections:
+    print(f"Found {len(detections)} candidate signals")
+    
+    # Analyze best detection
+    best_detection = detections[0]
+    print(f"Best detection: SNR = {best_detection['snr']:.1f}")
+    
+    # Parameter estimation
+    params = gw_detector.parameter_estimation(strain_gw, time_gw, best_detection)
+    
+    print("Estimated parameters:")
+    print(f"  Primary mass: {params['mass_1']:.1f} solar masses")
+    print(f"  Secondary mass: {params['mass_2']:.1f} solar masses")
+    print(f"  Chirp mass: {params['chirp_mass']:.1f} solar masses")
+    print(f"  Distance: {params['luminosity_distance']:.0f} Mpc")
+    print(f"  Arrival time: {params['arrival_time']:.3f} s")
+else:
+    print("No signals detected above threshold")
+```
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/4GbWfNHtHRg" title="Gravitational Waves Detection Explained" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+
+*Understanding gravitational wave detection and data analysis*
+
+## Multi-Messenger Astronomy
+
+### Combining Optical and Gravitational Wave Observations
+
+```python
+class MultiMessengerAnalyzer:
+    """Analysis of multi-messenger astronomical events"""
+    
+    def __init__(self):
+        self.gw_events = []
+        self.optical_events = []
+        self.coincident_events = []
+    
+    def simulate_kilonova_lightcurve(self, time_days, peak_magnitude=16.5):
+        """Simulate kilonova optical light curve"""
+        
+        # Two-component kilonova model
+        # Blue component (fast ejecta)
+        blue_peak_time = 1.0  # days
+        blue_decline = 3.0    # mag/day
+        blue_component = peak_magnitude + blue_decline * np.abs(time_days - blue_peak_time)
+        
+        # Red component (slow ejecta)  
+        red_peak_time = 5.0   # days
+        red_decline = 1.0     # mag/day
+        red_component = peak_magnitude + 1.5 + red_decline * np.abs(time_days - red_peak_time)
+        
+        # Combined light curve (flux addition)
+        blue_flux = 10**(-0.4 * blue_component)
+        red_flux = 10**(-0.4 * red_component)
+        total_flux = blue_flux + red_flux
+        
+        # Convert back to magnitude
+        combined_magnitude = -2.5 * np.log10(total_flux)
+        
+        return combined_magnitude
+    
+    def analyze_coincidence(self, gw_time, optical_time, gw_sky_area, 
+                          optical_position, time_window=24):
+        """Analyze temporal and spatial coincidence"""
+        
+        # Time coincidence (within time window in hours)
+        time_diff = abs(optical_time - gw_time) * 24  # Convert to hours
+        temporal_coincidence = time_diff <= time_window
+        
+        # Spatial coincidence (simplified)
+        # In reality, would use proper sky localization
+        spatial_probability = np.exp(-gw_sky_area / 100)  # Simplified metric
+        
+        # Combined significance
+        coincidence_score = spatial_probability if temporal_coincidence else 0
+        
+        return {
+            'temporal_coincidence': temporal_coincidence,
+            'time_difference_hours': time_diff,
+            'spatial_probability': spatial_probability,
+            'coincidence_score': coincidence_score
+        }
+    
+    def estimate_hubble_constant(self, distance_gw, redshift_optical):
+        """Estimate Hubble constant from standard siren"""
+        
+        # Hubble-Lemaitre law: v = H0 * d
+        # where v = c * z for small redshifts
+        
+        c = 299792.458  # km/s
+        velocity = c * redshift_optical
+        
+        # Hubble constant estimate
+        H0_estimate = velocity / distance_gw  # km/s/Mpc
+        
+        return H0_estimate
+    
+    def plot_multimessenger_event(self, gw_strain, optical_lightcurve, 
+                                 time_gw, time_optical):
+        """Visualize multi-messenger event"""
+        
+        fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(15, 10))
+        
+        # GW strain
+        ax1.plot(time_gw, gw_strain * 1e21, 'b-', linewidth=1)
+        ax1.set_xlabel('Time (s)')
+        ax1.set_ylabel('Strain (×10⁻²¹)')
+        ax1.set_title('Gravitational Wave Strain')
+        ax1.grid(True, alpha=0.3)
+        
+        # GW spectrogram (simplified)
+        from scipy.signal import spectrogram
+        f, t, Sxx = spectrogram(gw_strain, gw_detector.fs, nperseg=256)
+        
+        im = ax2.pcolormesh(t, f, 10 * np.log10(Sxx), cmap='viridis')
+        ax2.set_ylabel('Frequency (Hz)')
+        ax2.set_xlabel('Time (s)')
+        ax2.set_title('GW Spectrogram')
+        ax2.set_ylim(0, 500)
+        plt.colorbar(im, ax=ax2, label='Power (dB)')
+        
+        # Optical light curve
+        ax3.plot(time_optical, optical_lightcurve, 'ro-', markersize=4)
+        ax3.set_xlabel('Time (days)')
+        ax3.set_ylabel('Magnitude')
+        ax3.set_title('Kilonova Light Curve')
+        ax3.invert_yaxis()  # Brighter magnitudes at top
+        ax3.grid(True, alpha=0.3)
+        
+        # Sky localization (simulated)
+        # Create mock sky map
+        ra = np.linspace(0, 360, 100)
+        dec = np.linspace(-90, 90, 50)
+        RA, DEC = np.meshgrid(ra, dec)
+        
+        # Gaussian localization region
+        ra_center, dec_center = 180, 0  # Example coordinates
+        localization = np.exp(-((RA - ra_center)**2 + (DEC - dec_center)**2) / (2 * 10**2))
+        
+        im2 = ax4.contourf(RA, DEC, localization, levels=20, cmap='Blues')
+        ax4.scatter(ra_center, dec_center, marker='*', s=200, c='red', 
+                   label='Optical Counterpart')
+        ax4.set_xlabel('Right Ascension (degrees)')
+        ax4.set_ylabel('Declination (degrees)')
+        ax4.set_title('Sky Localization')
+        ax4.legend()
+        plt.colorbar(im2, ax=ax4, label='Probability Density')
+        
+        plt.tight_layout()
+        return fig
+
+# Example multi-messenger analysis
+analyzer = MultiMessengerAnalyzer()
+
+# Simulate kilonova light curve
+time_optical = np.linspace(0, 20, 50)  # 20 days
+kilonova_lc = analyzer.simulate_kilonova_lightcurve(time_optical)
+
+print("Multi-messenger event analysis:")
+
+# Analyze coincidence
+coincidence = analyzer.analyze_coincidence(
+    gw_time=0.0,        # GW trigger time
+    optical_time=0.5,   # Optical detection 12 hours later  
+    gw_sky_area=50,     # sq degrees
+    optical_position=(180, 0),  # RA, Dec
+    time_window=24      # hours
+)
+
+print(f"Temporal coincidence: {coincidence['temporal_coincidence']}")
+print(f"Time difference: {coincidence['time_difference_hours']:.1f} hours")
+print(f"Spatial probability: {coincidence['spatial_probability']:.3f}")
+print(f"Coincidence score: {coincidence['coincidence_score']:.3f}")
+
+# Hubble constant measurement
+if 'params' in locals():  # Use previous GW analysis results
+    distance_estimate = params['luminosity_distance']
+    redshift = 0.01  # Example host galaxy redshift
+    
+    H0_estimate = analyzer.estimate_hubble_constant(distance_estimate, redshift)
+    print(f"Hubble constant estimate: {H0_estimate:.1f} km/s/Mpc")
+
+# Create comprehensive visualization
+mm_fig = analyzer.plot_multimessenger_event(
+    strain_gw, kilonova_lc, time_gw, time_optical
+)
+plt.show()
+```
+
+## Advanced Data Analysis Techniques
+
+### Machine Learning for Variable Star Classification
+
+```python
+class VariableStarClassifier:
+    """Classify variable stars using time series features"""
+    
+    def __init__(self):
+        self.feature_extractors = {}
+        self.model = None
+        self.scaler = StandardScaler()
+    
+    def extract_time_series_features(self, time, magnitude):
+        """Extract features from variable star light curves"""
+        
+        features = {}
+        
+        # Basic statistics
+        features['mean'] = np.mean(magnitude)
+        features['std'] = np.std(magnitude)
+        features['skewness'] = scipy.stats.skew(magnitude)
+        features['kurtosis'] = scipy.stats.kurtosis(magnitude)
+        
+        # Variability indices
+        features['amplitude'] = np.max(magnitude) - np.min(magnitude)
+        features['range_ratio'] = (np.percentile(magnitude, 95) - 
+                                  np.percentile(magnitude, 5)) / features['amplitude']
+        
+        # Periodicity analysis
+        ls = LombScargle(time, magnitude)
+        frequency, power = ls.autopower(minimum_frequency=0.1, maximum_frequency=10)
+        
+        # Best period
+        best_freq = frequency[np.argmax(power)]
+        features['period'] = 1.0 / best_freq if best_freq > 0 else 0
+        features['period_power'] = np.max(power)
+        
+        # Phase-folded statistics
+        if features['period'] > 0:
+            phase = ((time % features['period']) / features['period']) * 2 * np.pi
+            phase_sorted_idx = np.argsort(phase)
+            mag_sorted = magnitude[phase_sorted_idx]
+            
+            # Smoothness of phase curve
+            features['phase_smoothness'] = np.mean(np.abs(np.diff(mag_sorted)))
+        else:
+            features['phase_smoothness'] = 0
+        
+        # Autocorrelation features
+        autocorr = np.correlate(magnitude - np.mean(magnitude), 
+                               magnitude - np.mean(magnitude), mode='full')
+        autocorr = autocorr[autocorr.size // 2:]
+        autocorr = autocorr / autocorr[0]  # Normalize
+        
+        features['autocorr_1'] = autocorr[1] if len(autocorr) > 1 else 0
+        features['autocorr_5'] = autocorr[5] if len(autocorr) > 5 else 0
+        
+        return features
+    
+    def generate_variable_star_data(self, n_stars=500):
+        """Generate synthetic variable star data"""
+        
+        star_types = {
+            'RR_Lyrae': {
+                'period_range': (0.2, 0.8),
+                'amplitude_range': (0.5, 1.5),
+                'shape': 'asymmetric'
+            },
+            'Cepheid': {
+                'period_range': (1, 50),
+                'amplitude_range': (0.1, 2.0),
+                'shape': 'sawtooth'
+            },
+            'Delta_Scuti': {
+                'period_range': (0.02, 0.2),
+                'amplitude_range': (0.01, 0.3),
+                'shape': 'sinusoidal'
+            },
+            'Eclipsing_Binary': {
+                'period_range': (0.2, 10),
+                'amplitude_range': (0.1, 3.0),
+                'shape': 'eclipse'
+            }
+        }
+        
+        all_features = []
+        all_labels = []
+        
+        for star_type, params in star_types.items():
+            n_type = n_stars // len(star_types)
+            
+            for _ in range(n_type):
+                # Generate light curve
+                time = np.linspace(0, 100, 1000)  # 100 days
+                
+                # Random period and amplitude
+                period = np.random.uniform(*params['period_range'])
+                amplitude = np.random.uniform(*params['amplitude_range'])
+                
+                # Base sinusoidal variation
+                phase = 2 * np.pi * time / period
+                
+                if params['shape'] == 'sinusoidal':
+                    magnitude = amplitude * np.sin(phase)
+                
+                elif params['shape'] == 'asymmetric':
+                    # RR Lyrae-like asymmetric shape
+                    magnitude = amplitude * (np.sin(phase) + 0.3 * np.sin(2*phase))
+                
+                elif params['shape'] == 'sawtooth':
+                    # Cepheid-like sawtooth
+                    magnitude = amplitude * scipy.signal.sawtooth(phase)
+                
+                elif params['shape'] == 'eclipse':
+                    # Eclipsing binary
+                    magnitude = np.zeros_like(phase)
+                    # Primary eclipse
+                    primary_eclipse = np.abs((phase % (2*np.pi)) - np.pi) < 0.1
+                    magnitude[primary_eclipse] = -amplitude
+                    # Secondary eclipse (if binary)
+                    secondary_eclipse = np.abs(phase % (2*np.pi)) < 0.05
+                    magnitude[secondary_eclipse] = -amplitude * 0.3
+                
+                # Add noise
+                magnitude += np.random.normal(0, 0.05, len(magnitude))
+                
+                # Extract features
+                features = self.extract_time_series_features(time, magnitude)
+                
+                all_features.append(list(features.values()))
+                all_labels.append(star_type)
+                
+                # Store feature names
+                if not hasattr(self, 'feature_names'):
+                    self.feature_names = list(features.keys())
+        
+        return np.array(all_features), np.array(all_labels)
+    
+    def train_variable_star_classifier(self, features, labels):
+        """Train classifier for variable star types"""
+        
+        # Split data
+        X_train, X_test, y_train, y_test = train_test_split(
+            features, labels, test_size=0.2, random_state=42, stratify=labels
+        )
+        
+        # Scale features
+        X_train_scaled = self.scaler.fit_transform(X_train)
+        X_test_scaled = self.scaler.transform(X_test)
+        
+        # Train classifier
+        self.model = RandomForestClassifier(
+            n_estimators=100, random_state=42, class_weight='balanced'
+        )
+        
+        self.model.fit(X_train_scaled, y_train)
+        
+        # Evaluate
+        y_pred = self.model.predict(X_test_scaled)
+        
+        print("Variable Star Classification Results:")
+        print(classification_report(y_test, y_pred))
+        
+        # Feature importance
+        importance_df = pd.DataFrame({
+            'feature': self.feature_names,
+            'importance': self.model.feature_importances_
+        }).sort_values('importance', ascending=False)
+        
+        return importance_df, X_test_scaled, y_test, y_pred
+
+# Example variable star classification
+vs_classifier = VariableStarClassifier()
+
+print("Generating variable star data...")
+vs_features, vs_labels = vs_classifier.generate_variable_star_data(n_stars=1000)
+
+print(f"Generated {len(vs_features)} variable star light curves")
+print(f"Star types: {np.unique(vs_labels)}")
+
+# Train classifier
+vs_importance, _, _, _ = vs_classifier.train_variable_star_classifier(
+    vs_features, vs_labels
+)
+
+print("\nTop Variable Star Classification Features:")
+print(vs_importance.head())
+```
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/MTY1Kje0yLg" title="Machine Learning in Astronomy" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+
+*Applications of machine learning and AI in modern astronomy*
+
+## Conclusion
+
+This comprehensive exploration of astronomical data analysis demonstrates the sophisticated computational techniques required to extract scientific insights from modern observational datasets. From exoplanet detection to gravitational wave analysis, these methods enable groundbreaking discoveries about our universe.
+
+### Key Achievements in Modern Astronomy
+
+1. **Exoplanet Science**: Over 5,000 confirmed exoplanets through transit and radial velocity methods
+2. **Gravitational Waves**: Direct detection of spacetime distortions from merging black holes and neutron stars  
+3. **Multi-Messenger Astronomy**: Simultaneous observations across electromagnetic spectrum and gravitational waves
+4. **Machine Learning**: Automated classification and discovery in massive astronomical surveys
+5. **Time-Domain Astronomy**: Real-time discovery and characterization of transient phenomena
+
+### Future Prospects
+
+- **James Webb Space Telescope**: Atmospheric characterization of exoplanets
+- **Vera Rubin Observatory**: 10-year Legacy Survey of Space and Time
+- **Next-generation gravitational wave detectors**: Einstein Telescope, Cosmic Explorer
+- **Artificial Intelligence**: Deep learning for pattern recognition in astronomical data
+- **Quantum computing**: Solving complex astrophysical simulations
+
+### Mathematical Beauty in Astronomy
+
+The mathematical elegance underlying astronomical phenomena—from Kepler's laws to Einstein's general relativity—continues to guide our understanding of the cosmos. As we develop more sophisticated computational tools, we gain deeper insights into the fundamental physics governing stellar evolution, galactic dynamics, and the large-scale structure of the universe.
+
+---
+
+*For complete datasets and analysis code, visit our [Astronomical Data Science Repository](https://github.com/astro-data-science).*

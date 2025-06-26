@@ -1,0 +1,1165 @@
+---
+title: "Real-time Scientific Data Streaming and Analysis"
+date: "2025-01-23"
+description: "Building real-time data pipelines for scientific applications with interactive visualizations and live analysis"
+image: "/images/blog/realtime-data.jpg"
+author: "Dr. Sarah Analytics"
+authorImage: "/images/authors/sarah-analytics.jpg"
+tags: ["data-streaming", "real-time-analysis", "visualization", "IoT", "scientific-computing"]
+---
+
+# Real-time Scientific Data Streaming and Analysis
+
+In modern scientific research, the ability to process and analyze data in real-time has become crucial for time-sensitive experiments, monitoring systems, and interactive research. This article explores advanced techniques for building real-time data pipelines, implementing streaming analytics, and creating dynamic visualizations for scientific applications.
+
+## The Architecture of Real-time Scientific Systems
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/LWS8LEQwjLA" frameborder="0" allowfullscreen></iframe>
+
+Real-time scientific data systems typically follow this architecture:
+
+$$
+\text{Data Sources} \rightarrow \text{Ingestion} \rightarrow \text{Processing} \rightarrow \text{Storage} \rightarrow \text{Visualization}
+$$
+
+```python
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import matplotlib.animation as animation
+from matplotlib.patches import Circle
+import seaborn as sns
+import time
+import threading
+import queue
+from datetime import datetime, timedelta
+import json
+import asyncio
+from collections import deque
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
+import plotly.express as px
+
+class ScientificDataStreamer:
+    """Real-time scientific data streaming simulator"""
+    
+    def __init__(self, sampling_rate=10):  # Hz
+        self.sampling_rate = sampling_rate
+        self.data_buffer = deque(maxlen=1000)
+        self.is_streaming = False
+        self.data_queue = queue.Queue()
+        
+        # Simulation parameters for different scientific data types
+        self.sensors = {
+            'temperature': {'baseline': 25.0, 'noise': 0.5, 'drift': 0.01},
+            'pressure': {'baseline': 101.3, 'noise': 0.2, 'drift': 0.005},
+            'ph_level': {'baseline': 7.0, 'noise': 0.1, 'drift': 0.002},
+            'flow_rate': {'baseline': 2.5, 'noise': 0.3, 'drift': 0.008},
+            'voltage': {'baseline': 5.0, 'noise': 0.05, 'drift': 0.001}
+        }
+        
+        self.anomaly_probability = 0.02  # 2% chance per sample
+        self.start_time = datetime.now()
+        
+    def generate_realistic_data(self, sensor_type, elapsed_time):
+        """Generate realistic scientific sensor data with trends and anomalies"""
+        
+        if sensor_type not in self.sensors:
+            return None
+        
+        config = self.sensors[sensor_type]
+        
+        # Base signal with drift
+        base_value = config['baseline'] + config['drift'] * elapsed_time
+        
+        # Add periodic components (daily cycles, equipment cycles)
+        daily_cycle = 0.5 * np.sin(2 * np.pi * elapsed_time / 86400)  # 24-hour cycle
+        equipment_cycle = 0.2 * np.sin(2 * np.pi * elapsed_time / 3600)  # 1-hour cycle
+        
+        # Random noise
+        noise = np.random.normal(0, config['noise'])
+        
+        # Occasional anomalies
+        anomaly = 0
+        if np.random.random() < self.anomaly_probability:
+            anomaly_magnitude = config['noise'] * 5  # 5x normal noise
+            anomaly = np.random.choice([-1, 1]) * anomaly_magnitude
+        
+        # Combine all components
+        value = base_value + daily_cycle + equipment_cycle + noise + anomaly
+        
+        return {
+            'timestamp': datetime.now(),
+            'sensor': sensor_type,
+            'value': value,
+            'anomaly': abs(anomaly) > 0,
+            'quality': 1.0 if abs(anomaly) == 0 else 0.3  # Quality indicator
+        }
+    
+    def start_streaming(self):
+        """Start the data streaming thread"""
+        self.is_streaming = True
+        self.streaming_thread = threading.Thread(target=self._stream_data)
+        self.streaming_thread.daemon = True
+        self.streaming_thread.start()
+    
+    def stop_streaming(self):
+        """Stop the data streaming"""
+        self.is_streaming = False
+        if hasattr(self, 'streaming_thread'):
+            self.streaming_thread.join()
+    
+    def _stream_data(self):
+        """Internal method to continuously generate data"""
+        while self.is_streaming:
+            current_time = datetime.now()
+            elapsed_seconds = (current_time - self.start_time).total_seconds()
+            
+            # Generate data for all sensors
+            batch_data = []
+            for sensor_type in self.sensors:
+                data_point = self.generate_realistic_data(sensor_type, elapsed_seconds)
+                if data_point:
+                    batch_data.append(data_point)
+            
+            # Add to buffer and queue
+            self.data_buffer.extend(batch_data)
+            self.data_queue.put(batch_data)
+            
+            # Wait for next sampling interval
+            time.sleep(1.0 / self.sampling_rate)
+    
+    def get_latest_data(self, n_points=100):
+        """Get the latest n data points"""
+        if len(self.data_buffer) == 0:
+            return pd.DataFrame()
+        
+        # Convert to DataFrame
+        recent_data = list(self.data_buffer)[-n_points:]
+        df = pd.DataFrame(recent_data)
+        
+        return df
+    
+    def get_real_time_batch(self):
+        """Get the latest batch of data from the queue"""
+        batch = []
+        try:
+            while True:
+                batch.extend(self.data_queue.get_nowait())
+        except queue.Empty:
+            pass
+        
+        return batch
+
+# Real-time analytics engine
+class RealTimeAnalytics:
+    """Real-time analytics for streaming scientific data"""
+    
+    def __init__(self, window_size=50):
+        self.window_size = window_size
+        self.analytics_buffer = {}
+        
+    def update_analytics(self, new_data):
+        """Update analytics with new data batch"""
+        if not new_data:
+            return {}
+        
+        df = pd.DataFrame(new_data)
+        
+        analytics = {}
+        
+        for sensor in df['sensor'].unique():
+            sensor_data = df[df['sensor'] == sensor]['value']
+            
+            if sensor not in self.analytics_buffer:
+                self.analytics_buffer[sensor] = deque(maxlen=self.window_size)
+            
+            # Add new data to buffer
+            self.analytics_buffer[sensor].extend(sensor_data)
+            
+            # Calculate analytics
+            if len(self.analytics_buffer[sensor]) > 5:  # Minimum data for analytics
+                values = np.array(self.analytics_buffer[sensor])
+                
+                analytics[sensor] = {
+                    'mean': np.mean(values),
+                    'std': np.std(values),
+                    'min': np.min(values),
+                    'max': np.max(values),
+                    'trend': self.calculate_trend(values),
+                    'anomaly_score': self.detect_anomalies(values),
+                    'stability': self.calculate_stability(values)
+                }
+        
+        return analytics
+    
+    def calculate_trend(self, values):
+        """Calculate trend direction and strength"""
+        if len(values) < 10:
+            return {'direction': 'insufficient_data', 'strength': 0}
+        
+        # Linear regression for trend
+        x = np.arange(len(values))
+        slope, intercept = np.polyfit(x, values, 1)
+        
+        # Calculate R-squared
+        y_pred = slope * x + intercept
+        ss_res = np.sum((values - y_pred) ** 2)
+        ss_tot = np.sum((values - np.mean(values)) ** 2)
+        r_squared = 1 - (ss_res / ss_tot) if ss_tot > 0 else 0
+        
+        if abs(slope) < 0.001:
+            direction = 'stable'
+        elif slope > 0:
+            direction = 'increasing'
+        else:
+            direction = 'decreasing'
+        
+        return {'direction': direction, 'strength': r_squared, 'slope': slope}
+    
+    def detect_anomalies(self, values):
+        """Detect anomalies using statistical methods"""
+        if len(values) < 10:
+            return 0
+        
+        # Z-score based anomaly detection
+        mean_val = np.mean(values)
+        std_val = np.std(values)
+        
+        if std_val == 0:
+            return 0
+        
+        z_scores = np.abs((values - mean_val) / std_val)
+        anomaly_threshold = 2.5
+        
+        anomaly_count = np.sum(z_scores > anomaly_threshold)
+        anomaly_score = anomaly_count / len(values)
+        
+        return anomaly_score
+    
+    def calculate_stability(self, values):
+        """Calculate system stability metric"""
+        if len(values) < 5:
+            return 1.0
+        
+        # Coefficient of variation
+        mean_val = np.mean(values)
+        if mean_val == 0:
+            return 0
+        
+        cv = np.std(values) / abs(mean_val)
+        
+        # Convert to stability score (0-1, where 1 is most stable)
+        stability = max(0, 1 - cv)
+        
+        return stability
+
+# Create interactive visualizations
+class RealTimeVisualizer:
+    """Real-time scientific data visualizer"""
+    
+    def __init__(self):
+        self.fig, self.axes = plt.subplots(2, 3, figsize=(15, 10))
+        self.fig.suptitle('Real-time Scientific Data Monitoring', fontsize=16)
+        
+        # Flatten axes for easier indexing
+        self.axes = self.axes.flatten()
+        
+        # Initialize data containers
+        self.plot_data = {}
+        self.sensor_names = ['temperature', 'pressure', 'ph_level', 'flow_rate', 'voltage']
+        
+        # Setup individual plots
+        for i, sensor in enumerate(self.sensor_names):
+            self.plot_data[sensor] = {'times': [], 'values': [], 'anomalies': []}
+            self.axes[i].set_title(f'{sensor.replace("_", " ").title()}')
+            self.axes[i].grid(True, alpha=0.3)
+            
+        # Setup analytics summary plot
+        self.axes[5].set_title('System Analytics Summary')
+        self.axes[5].axis('off')
+        
+        plt.tight_layout()
+    
+    def update_plots(self, new_data, analytics):
+        """Update all plots with new data"""
+        if not new_data:
+            return
+        
+        current_time = datetime.now()
+        
+        # Update data for each sensor
+        for data_point in new_data:
+            sensor = data_point['sensor']
+            if sensor in self.plot_data:
+                self.plot_data[sensor]['times'].append(current_time)
+                self.plot_data[sensor]['values'].append(data_point['value'])
+                self.plot_data[sensor]['anomalies'].append(data_point['anomaly'])
+                
+                # Keep only recent data (last 100 points)
+                if len(self.plot_data[sensor]['times']) > 100:
+                    self.plot_data[sensor]['times'].pop(0)
+                    self.plot_data[sensor]['values'].pop(0)
+                    self.plot_data[sensor]['anomalies'].pop(0)
+        
+        # Clear and redraw plots
+        for i, sensor in enumerate(self.sensor_names):
+            if i < len(self.axes) - 1:  # Exclude summary plot
+                ax = self.axes[i]
+                ax.clear()
+                ax.set_title(f'{sensor.replace("_", " ").title()}')
+                ax.grid(True, alpha=0.3)
+                
+                if self.plot_data[sensor]['times']:
+                    times = self.plot_data[sensor]['times']
+                    values = self.plot_data[sensor]['values']
+                    anomalies = self.plot_data[sensor]['anomalies']
+                    
+                    # Plot normal data
+                    normal_times = [t for t, a in zip(times, anomalies) if not a]
+                    normal_values = [v for v, a in zip(values, anomalies) if not a]
+                    
+                    # Plot anomalous data
+                    anomaly_times = [t for t, a in zip(times, anomalies) if a]
+                    anomaly_values = [v for v, a in zip(values, anomalies) if a]
+                    
+                    if normal_times:
+                        ax.plot(normal_times, normal_values, 'b-', alpha=0.7, linewidth=1)
+                        ax.scatter(normal_times, normal_values, c='blue', s=20, alpha=0.6)
+                    
+                    if anomaly_times:
+                        ax.scatter(anomaly_times, anomaly_values, c='red', s=40, alpha=0.8, marker='x')
+                    
+                    # Add analytics info
+                    if sensor in analytics:
+                        stats = analytics[sensor]
+                        info_text = f"Mean: {stats['mean']:.2f}\nStd: {stats['std']:.2f}\nTrend: {stats['trend']['direction']}"
+                        ax.text(0.02, 0.98, info_text, transform=ax.transAxes, 
+                               verticalalignment='top', fontsize=8,
+                               bbox=dict(boxstyle='round', facecolor='white', alpha=0.8))
+        
+        # Update analytics summary
+        self.axes[5].clear()
+        self.axes[5].set_title('System Analytics Summary')
+        self.axes[5].axis('off')
+        
+        if analytics:
+            summary_text = "System Status:\n\n"
+            
+            for sensor, stats in analytics.items():
+                status = "🟢" if stats['stability'] > 0.8 else "🟡" if stats['stability'] > 0.5 else "🔴"
+                summary_text += f"{status} {sensor}: {stats['trend']['direction']}\n"
+                summary_text += f"   Stability: {stats['stability']:.2f}\n"
+                summary_text += f"   Anomaly Score: {stats['anomaly_score']:.3f}\n\n"
+            
+            self.axes[5].text(0.1, 0.9, summary_text, transform=self.axes[5].transAxes,
+                             verticalalignment='top', fontsize=10,
+                             bbox=dict(boxstyle='round', facecolor='lightgray', alpha=0.8))
+        
+        plt.tight_layout()
+
+# Example usage and demonstration
+def demonstrate_realtime_system():
+    """Demonstrate the real-time scientific data system"""
+    
+    # Initialize components
+    streamer = ScientificDataStreamer(sampling_rate=5)  # 5 Hz
+    analytics = RealTimeAnalytics(window_size=30)
+    visualizer = RealTimeVisualizer()
+    
+    # Start streaming
+    print("Starting real-time data streaming...")
+    streamer.start_streaming()
+    
+    try:
+        # Run for demonstration
+        for iteration in range(50):  # Run for about 10 seconds at 5Hz
+            # Get new data
+            new_batch = streamer.get_real_time_batch()
+            
+            if new_batch:
+                # Update analytics
+                current_analytics = analytics.update_analytics(new_batch)
+                
+                # Update visualizations
+                visualizer.update_plots(new_batch, current_analytics)
+                
+                # Print some analytics
+                if iteration % 10 == 0 and current_analytics:
+                    print(f"\n--- Analytics Update (Iteration {iteration}) ---")
+                    for sensor, stats in current_analytics.items():
+                        print(f"{sensor}: Trend={stats['trend']['direction']}, "
+                              f"Stability={stats['stability']:.2f}, "
+                              f"Anomaly Score={stats['anomaly_score']:.3f}")
+            
+            # Update display
+            plt.pause(0.1)
+            
+    except KeyboardInterrupt:
+        print("\nStopping demonstration...")
+    
+    finally:
+        streamer.stop_streaming()
+        plt.show()
+
+# Run the demonstration
+print("Setting up real-time scientific data monitoring system...")
+demonstrate_realtime_system()
+```
+
+## Advanced Stream Processing Patterns
+
+### 1. Windowed Aggregations
+
+For time-series analysis, we often need to compute statistics over sliding windows:
+
+```python
+class SlidingWindowProcessor:
+    """Advanced sliding window processor for scientific data streams"""
+    
+    def __init__(self, window_duration=60, slide_interval=10):
+        self.window_duration = window_duration  # seconds
+        self.slide_interval = slide_interval    # seconds
+        self.data_windows = {}
+        self.last_processed = {}
+        
+    def add_data_point(self, sensor, timestamp, value):
+        """Add a new data point to the sliding window"""
+        if sensor not in self.data_windows:
+            self.data_windows[sensor] = deque()
+            self.last_processed[sensor] = timestamp
+        
+        # Add new point
+        self.data_windows[sensor].append((timestamp, value))
+        
+        # Remove old points outside window
+        cutoff_time = timestamp - timedelta(seconds=self.window_duration)
+        while (self.data_windows[sensor] and 
+               self.data_windows[sensor][0][0] < cutoff_time):
+            self.data_windows[sensor].popleft()
+    
+    def should_process_window(self, sensor, current_time):
+        """Check if enough time has passed to process a new window"""
+        if sensor not in self.last_processed:
+            return False
+        
+        time_since_last = (current_time - self.last_processed[sensor]).total_seconds()
+        return time_since_last >= self.slide_interval
+    
+    def process_window(self, sensor, current_time):
+        """Process the current window and return aggregated statistics"""
+        if (sensor not in self.data_windows or 
+            not self.should_process_window(sensor, current_time)):
+            return None
+        
+        window_data = list(self.data_windows[sensor])
+        if len(window_data) < 5:  # Minimum data requirement
+            return None
+        
+        values = [point[1] for point in window_data]
+        timestamps = [point[0] for point in window_data]
+        
+        # Advanced statistical measures
+        result = {
+            'sensor': sensor,
+            'window_start': min(timestamps),
+            'window_end': max(timestamps),
+            'count': len(values),
+            'mean': np.mean(values),
+            'median': np.median(values),
+            'std': np.std(values),
+            'min': np.min(values),
+            'max': np.max(values),
+            'range': np.max(values) - np.min(values),
+            'iqr': np.percentile(values, 75) - np.percentile(values, 25),
+            'skewness': self.calculate_skewness(values),
+            'kurtosis': self.calculate_kurtosis(values),
+            'autocorrelation': self.calculate_autocorrelation(values),
+            'trend_strength': self.calculate_trend_strength(values),
+            'seasonality_strength': self.calculate_seasonality_strength(values, timestamps)
+        }
+        
+        self.last_processed[sensor] = current_time
+        return result
+    
+    def calculate_skewness(self, values):
+        """Calculate sample skewness"""
+        if len(values) < 3:
+            return 0
+        
+        mean_val = np.mean(values)
+        std_val = np.std(values, ddof=1)
+        
+        if std_val == 0:
+            return 0
+        
+        n = len(values)
+        skewness = (n / ((n-1) * (n-2))) * np.sum(((values - mean_val) / std_val) ** 3)
+        return skewness
+    
+    def calculate_kurtosis(self, values):
+        """Calculate sample kurtosis (excess kurtosis)"""
+        if len(values) < 4:
+            return 0
+        
+        mean_val = np.mean(values)
+        std_val = np.std(values, ddof=1)
+        
+        if std_val == 0:
+            return 0
+        
+        n = len(values)
+        kurtosis = (n * (n+1) / ((n-1) * (n-2) * (n-3))) * np.sum(((values - mean_val) / std_val) ** 4)
+        kurtosis -= 3 * (n-1)**2 / ((n-2) * (n-3))  # Excess kurtosis
+        
+        return kurtosis
+    
+    def calculate_autocorrelation(self, values, lag=1):
+        """Calculate lag-1 autocorrelation"""
+        if len(values) <= lag:
+            return 0
+        
+        y1 = values[:-lag]
+        y2 = values[lag:]
+        
+        if len(y1) == 0 or np.std(y1) == 0 or np.std(y2) == 0:
+            return 0
+        
+        correlation = np.corrcoef(y1, y2)[0, 1]
+        return correlation if not np.isnan(correlation) else 0
+    
+    def calculate_trend_strength(self, values):
+        """Calculate trend strength using linear regression"""
+        if len(values) < 5:
+            return 0
+        
+        x = np.arange(len(values))
+        try:
+            slope, intercept = np.polyfit(x, values, 1)
+            y_pred = slope * x + intercept
+            
+            ss_res = np.sum((values - y_pred) ** 2)
+            ss_tot = np.sum((values - np.mean(values)) ** 2)
+            
+            r_squared = 1 - (ss_res / ss_tot) if ss_tot > 0 else 0
+            return r_squared * np.sign(slope)  # Sign indicates direction
+            
+        except np.linalg.LinAlgError:
+            return 0
+    
+    def calculate_seasonality_strength(self, values, timestamps):
+        """Detect seasonality in the data"""
+        if len(values) < 10:
+            return 0
+        
+        # Simple seasonality detection using FFT
+        try:
+            # Remove trend first
+            x = np.arange(len(values))
+            slope, intercept = np.polyfit(x, values, 1)
+            detrended = values - (slope * x + intercept)
+            
+            # FFT to find dominant frequencies
+            fft = np.fft.fft(detrended)
+            freqs = np.fft.fftfreq(len(detrended))
+            
+            # Find the strongest frequency component (excluding DC)
+            magnitude = np.abs(fft[1:len(fft)//2])
+            if len(magnitude) > 0:
+                max_magnitude = np.max(magnitude)
+                total_power = np.sum(magnitude**2)
+                
+                if total_power > 0:
+                    seasonality_strength = (max_magnitude**2) / total_power
+                    return min(1.0, seasonality_strength)
+            
+            return 0
+            
+        except:
+            return 0
+
+# Example of advanced analytics
+window_processor = SlidingWindowProcessor(window_duration=30, slide_interval=5)
+
+# Simulate processing
+current_time = datetime.now()
+
+for i in range(100):
+    timestamp = current_time + timedelta(seconds=i)
+    
+    # Generate synthetic data with trend and seasonality
+    trend = 0.01 * i
+    seasonal = 2 * np.sin(2 * np.pi * i / 20)  # 20-second period
+    noise = np.random.normal(0, 0.5)
+    value = 25 + trend + seasonal + noise
+    
+    window_processor.add_data_point('temperature', timestamp, value)
+    
+    # Process window every slide interval
+    if i % 5 == 0:  # Every 5 seconds
+        result = window_processor.process_window('temperature', timestamp)
+        if result:
+            print(f"Window {i//5}: Mean={result['mean']:.2f}, "
+                  f"Trend={result['trend_strength']:.3f}, "
+                  f"Seasonality={result['seasonality_strength']:.3f}")
+```
+
+### 2. Complex Event Processing
+
+For detecting patterns across multiple data streams:
+
+```python
+class ComplexEventProcessor:
+    """Complex event processing for scientific data patterns"""
+    
+    def __init__(self):
+        self.event_rules = []
+        self.event_history = deque(maxlen=1000)
+        self.active_patterns = {}
+        
+    def add_rule(self, rule_name, condition_func, time_window=60):
+        """Add a complex event detection rule"""
+        rule = {
+            'name': rule_name,
+            'condition': condition_func,
+            'time_window': time_window,
+            'last_triggered': None
+        }
+        self.event_rules.append(rule)
+    
+    def process_data_batch(self, data_batch):
+        """Process a batch of data and detect complex events"""
+        events_detected = []
+        current_time = datetime.now()
+        
+        # Add data to history
+        for data_point in data_batch:
+            self.event_history.append({
+                'timestamp': current_time,
+                'sensor': data_point['sensor'],
+                'value': data_point['value'],
+                'anomaly': data_point.get('anomaly', False)
+            })
+        
+        # Check each rule
+        for rule in self.event_rules:
+            try:
+                # Get recent data within time window
+                cutoff_time = current_time - timedelta(seconds=rule['time_window'])
+                recent_data = [
+                    point for point in self.event_history 
+                    if point['timestamp'] >= cutoff_time
+                ]
+                
+                # Check if condition is met
+                if rule['condition'](recent_data, current_time):
+                    # Avoid duplicate triggers
+                    if (rule['last_triggered'] is None or 
+                        (current_time - rule['last_triggered']).total_seconds() > 30):
+                        
+                        events_detected.append({
+                            'rule_name': rule['name'],
+                            'timestamp': current_time,
+                            'data_context': recent_data[-10:]  # Last 10 points for context
+                        })
+                        
+                        rule['last_triggered'] = current_time
+                        
+            except Exception as e:
+                print(f"Error processing rule {rule['name']}: {e}")
+        
+        return events_detected
+
+# Define some complex event rules
+def temperature_pressure_correlation_rule(recent_data, current_time):
+    """Detect unusual temperature-pressure correlation"""
+    temp_data = [p['value'] for p in recent_data if p['sensor'] == 'temperature']
+    pressure_data = [p['value'] for p in recent_data if p['sensor'] == 'pressure']
+    
+    if len(temp_data) < 10 or len(pressure_data) < 10:
+        return False
+    
+    # Calculate correlation
+    min_len = min(len(temp_data), len(pressure_data))
+    temp_recent = temp_data[-min_len:]
+    pressure_recent = pressure_data[-min_len:]
+    
+    correlation = np.corrcoef(temp_recent, pressure_recent)[0, 1]
+    
+    # Trigger if correlation is unusually high or low
+    return abs(correlation) > 0.8
+
+def multi_sensor_anomaly_rule(recent_data, current_time):
+    """Detect simultaneous anomalies across multiple sensors"""
+    recent_anomalies = [p for p in recent_data if p['anomaly']]
+    
+    if len(recent_anomalies) < 3:
+        return False
+    
+    # Check if anomalies occurred across different sensors within a short time
+    sensor_types = set(p['sensor'] for p in recent_anomalies)
+    
+    # Trigger if 3+ different sensors show anomalies
+    return len(sensor_types) >= 3
+
+def system_instability_rule(recent_data, current_time):
+    """Detect overall system instability"""
+    if len(recent_data) < 20:
+        return False
+    
+    # Calculate variance for each sensor
+    sensor_variances = {}
+    for sensor in ['temperature', 'pressure', 'ph_level']:
+        sensor_values = [p['value'] for p in recent_data if p['sensor'] == sensor]
+        if len(sensor_values) >= 5:
+            sensor_variances[sensor] = np.var(sensor_values)
+    
+    # Trigger if multiple sensors show high variance
+    high_variance_count = sum(1 for var in sensor_variances.values() if var > 1.0)
+    
+    return high_variance_count >= 2
+
+# Example usage
+event_processor = ComplexEventProcessor()
+
+# Add rules
+event_processor.add_rule('temp_pressure_correlation', temperature_pressure_correlation_rule, 60)
+event_processor.add_rule('multi_sensor_anomaly', multi_sensor_anomaly_rule, 30)
+event_processor.add_rule('system_instability', system_instability_rule, 120)
+
+print("Complex Event Processing Rules Added:")
+for rule in event_processor.event_rules:
+    print(f"- {rule['name']} (window: {rule['time_window']}s)")
+```
+
+## Interactive Dashboard Creation
+
+### Web-based Real-time Dashboard
+
+```html
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Scientific Data Dashboard</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            margin: 0; 
+            padding: 20px; 
+            background-color: #f5f5f5;
+        }
+        .dashboard-header {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+        }
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .metric-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .metric-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        .metric-label {
+            color: #7f8c8d;
+            font-size: 0.9em;
+        }
+        .chart-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+        }
+        .status-good { background-color: #27ae60; }
+        .status-warning { background-color: #f39c12; }
+        .status-error { background-color: #e74c3c; }
+    </style>
+</head>
+<body>
+    <div class="dashboard-header">
+        <h1>Real-time Scientific Monitoring Dashboard</h1>
+        <p>Live data from laboratory sensors and equipment</p>
+    </div>
+    
+    <div class="metrics-grid">
+        <div class="metric-card">
+            <div class="metric-label">Temperature</div>
+            <div class="metric-value" id="temp-value">--°C</div>
+            <div><span class="status-indicator status-good"></span>Normal</div>
+        </div>
+        
+        <div class="metric-card">
+            <div class="metric-label">Pressure</div>
+            <div class="metric-value" id="pressure-value">-- kPa</div>
+            <div><span class="status-indicator status-good"></span>Normal</div>
+        </div>
+        
+        <div class="metric-card">
+            <div class="metric-label">pH Level</div>
+            <div class="metric-value" id="ph-value">--</div>
+            <div><span class="status-indicator status-warning"></span>Monitoring</div>
+        </div>
+        
+        <div class="metric-card">
+            <div class="metric-label">System Health</div>
+            <div class="metric-value" id="health-value">--%</div>
+            <div><span class="status-indicator status-good"></span>Operational</div>
+        </div>
+    </div>
+    
+    <div class="chart-container">
+        <div id="timeseries-chart" style="height: 400px;"></div>
+    </div>
+    
+    <div class="chart-container">
+        <div id="correlation-heatmap" style="height: 300px;"></div>
+    </div>
+    
+    <script>
+        // Initialize charts
+        const timeSeriesData = {
+            temperature: {x: [], y: [], name: 'Temperature', type: 'scatter', mode: 'lines+markers'},
+            pressure: {x: [], y: [], name: 'Pressure', type: 'scatter', mode: 'lines+markers'},
+            ph_level: {x: [], y: [], name: 'pH Level', type: 'scatter', mode: 'lines+markers'}
+        };
+        
+        const timeSeriesLayout = {
+            title: 'Real-time Sensor Data',
+            xaxis: {title: 'Time'},
+            yaxis: {title: 'Value'},
+            showlegend: true
+        };
+        
+        Plotly.newPlot('timeseries-chart', Object.values(timeSeriesData), timeSeriesLayout);
+        
+        // Correlation heatmap
+        const correlationData = [{
+            z: [[1, 0, 0], [0, 1, 0], [0, 0, 1]],
+            x: ['Temperature', 'Pressure', 'pH'],
+            y: ['Temperature', 'Pressure', 'pH'],
+            type: 'heatmap',
+            colorscale: 'RdBu'
+        }];
+        
+        const correlationLayout = {
+            title: 'Sensor Correlation Matrix',
+            xaxis: {title: 'Sensors'},
+            yaxis: {title: 'Sensors'}
+        };
+        
+        Plotly.newPlot('correlation-heatmap', correlationData, correlationLayout);
+        
+        // Simulate real-time data updates
+        function generateDataPoint(sensor, baseline, noise) {
+            const now = new Date();
+            const value = baseline + Math.random() * noise - noise/2;
+            return {timestamp: now, value: value};
+        }
+        
+        function updateDashboard() {
+            const now = new Date();
+            
+            // Generate new data points
+            const tempPoint = generateDataPoint('temperature', 25, 2);
+            const pressurePoint = generateDataPoint('pressure', 101.3, 1);
+            const phPoint = generateDataPoint('ph_level', 7.0, 0.5);
+            
+            // Update time series data
+            timeSeriesData.temperature.x.push(tempPoint.timestamp);
+            timeSeriesData.temperature.y.push(tempPoint.value);
+            
+            timeSeriesData.pressure.x.push(pressurePoint.timestamp);
+            timeSeriesData.pressure.y.push(pressurePoint.value);
+            
+            timeSeriesData.ph_level.x.push(phPoint.timestamp);
+            timeSeriesData.ph_level.y.push(phPoint.value);
+            
+            // Keep only last 50 points
+            Object.values(timeSeriesData).forEach(series => {
+                if (series.x.length > 50) {
+                    series.x.shift();
+                    series.y.shift();
+                }
+            });
+            
+            // Update metric cards
+            document.getElementById('temp-value').textContent = tempPoint.value.toFixed(1) + '°C';
+            document.getElementById('pressure-value').textContent = pressurePoint.value.toFixed(1) + ' kPa';
+            document.getElementById('ph-value').textContent = phPoint.value.toFixed(2);
+            document.getElementById('health-value').textContent = (85 + Math.random() * 10).toFixed(0) + '%';
+            
+            // Update charts
+            Plotly.redraw('timeseries-chart');
+            
+            // Update correlation matrix (simplified)
+            if (timeSeriesData.temperature.y.length > 10) {
+                const tempValues = timeSeriesData.temperature.y.slice(-10);
+                const pressureValues = timeSeriesData.pressure.y.slice(-10);
+                const phValues = timeSeriesData.ph_level.y.slice(-10);
+                
+                // Simple correlation calculation
+                const tempPressureCorr = calculateCorrelation(tempValues, pressureValues);
+                const tempPhCorr = calculateCorrelation(tempValues, phValues);
+                const pressurePhCorr = calculateCorrelation(pressureValues, phValues);
+                
+                const newCorrelationData = [{
+                    z: [
+                        [1, tempPressureCorr, tempPhCorr],
+                        [tempPressureCorr, 1, pressurePhCorr],
+                        [tempPhCorr, pressurePhCorr, 1]
+                    ],
+                    x: ['Temperature', 'Pressure', 'pH'],
+                    y: ['Temperature', 'Pressure', 'pH'],
+                    type: 'heatmap',
+                    colorscale: 'RdBu',
+                    zmin: -1,
+                    zmax: 1
+                }];
+                
+                Plotly.redraw('correlation-heatmap', newCorrelationData);
+            }
+        }
+        
+        function calculateCorrelation(x, y) {
+            const n = x.length;
+            const sumX = x.reduce((a, b) => a + b);
+            const sumY = y.reduce((a, b) => a + b);
+            const sumXY = x.reduce((sum, xi, i) => sum + xi * y[i], 0);
+            const sumX2 = x.reduce((sum, xi) => sum + xi * xi, 0);
+            const sumY2 = y.reduce((sum, yi) => sum + yi * yi, 0);
+            
+            const numerator = n * sumXY - sumX * sumY;
+            const denominator = Math.sqrt((n * sumX2 - sumX * sumX) * (n * sumY2 - sumY * sumY));
+            
+            return denominator !== 0 ? numerator / denominator : 0;
+        }
+        
+        // Start real-time updates
+        setInterval(updateDashboard, 1000); // Update every second
+        
+        console.log('Real-time scientific dashboard initialized');
+    </script>
+</body>
+</html>
+```
+
+## Performance Optimization for High-Throughput Streams
+
+### Memory-Efficient Processing
+
+```python
+class HighThroughputProcessor:
+    """Optimized processor for high-throughput scientific data streams"""
+    
+    def __init__(self, max_memory_mb=100):
+        self.max_memory_mb = max_memory_mb
+        self.data_chunks = []
+        self.processed_count = 0
+        self.compression_enabled = True
+        
+    def process_chunk(self, data_chunk):
+        """Process a chunk of data efficiently"""
+        # Convert to NumPy for efficient processing
+        if isinstance(data_chunk, list):
+            data_array = np.array([d['value'] for d in data_chunk if 'value' in d])
+        else:
+            data_array = data_chunk
+        
+        # Batch processing using vectorized operations
+        processed_chunk = {
+            'mean': np.mean(data_array),
+            'std': np.std(data_array),
+            'min': np.min(data_array),
+            'max': np.max(data_array),
+            'count': len(data_array),
+            'timestamp': datetime.now()
+        }
+        
+        return processed_chunk
+    
+    def compress_historical_data(self, data):
+        """Compress historical data to save memory"""
+        if not self.compression_enabled:
+            return data
+        
+        # Simple compression: keep only statistical summaries for old data
+        if len(data) > 1000:  # Threshold for compression
+            # Keep recent 100 points as-is, compress the rest
+            recent_data = data[-100:]
+            historical_data = data[:-100]
+            
+            # Compress historical data into statistical blocks
+            compressed_blocks = []
+            block_size = 100
+            
+            for i in range(0, len(historical_data), block_size):
+                block = historical_data[i:i+block_size]
+                block_values = [point['value'] for point in block if 'value' in point]
+                
+                if block_values:
+                    compressed_block = {
+                        'start_time': block[0]['timestamp'],
+                        'end_time': block[-1]['timestamp'],
+                        'mean': np.mean(block_values),
+                        'std': np.std(block_values),
+                        'min': np.min(block_values),
+                        'max': np.max(block_values),
+                        'count': len(block_values),
+                        'compressed': True
+                    }
+                    compressed_blocks.append(compressed_block)
+            
+            return compressed_blocks + recent_data
+        
+        return data
+
+# Performance monitoring
+class PerformanceMonitor:
+    """Monitor system performance for real-time processing"""
+    
+    def __init__(self):
+        self.metrics = {
+            'processing_times': deque(maxlen=1000),
+            'memory_usage': deque(maxlen=1000),
+            'throughput': deque(maxlen=1000),
+            'error_count': 0
+        }
+        self.start_time = time.time()
+    
+    def record_processing_time(self, start_time, end_time):
+        """Record processing time for a batch"""
+        processing_time = end_time - start_time
+        self.metrics['processing_times'].append(processing_time)
+    
+    def record_memory_usage(self):
+        """Record current memory usage"""
+        import psutil
+        process = psutil.Process()
+        memory_mb = process.memory_info().rss / 1024 / 1024
+        self.metrics['memory_usage'].append(memory_mb)
+    
+    def record_throughput(self, items_processed):
+        """Record throughput (items per second)"""
+        current_time = time.time()
+        elapsed = current_time - self.start_time
+        throughput = items_processed / elapsed if elapsed > 0 else 0
+        self.metrics['throughput'].append(throughput)
+    
+    def get_performance_summary(self):
+        """Get performance summary statistics"""
+        summary = {}
+        
+        if self.metrics['processing_times']:
+            summary['avg_processing_time'] = np.mean(self.metrics['processing_times'])
+            summary['max_processing_time'] = np.max(self.metrics['processing_times'])
+        
+        if self.metrics['memory_usage']:
+            summary['avg_memory_mb'] = np.mean(self.metrics['memory_usage'])
+            summary['max_memory_mb'] = np.max(self.metrics['memory_usage'])
+        
+        if self.metrics['throughput']:
+            summary['avg_throughput'] = np.mean(self.metrics['throughput'])
+            summary['current_throughput'] = self.metrics['throughput'][-1] if self.metrics['throughput'] else 0
+        
+        summary['error_count'] = self.metrics['error_count']
+        summary['uptime_seconds'] = time.time() - self.start_time
+        
+        return summary
+
+# Example of optimized processing
+processor = HighThroughputProcessor()
+monitor = PerformanceMonitor()
+
+print("Performance Optimization Example:")
+print("=" * 50)
+
+# Simulate high-throughput processing
+for batch_num in range(10):
+    start_time = time.time()
+    
+    # Generate large batch of data
+    batch_data = []
+    for i in range(1000):  # 1000 data points per batch
+        batch_data.append({
+            'timestamp': datetime.now(),
+            'value': np.random.normal(25, 2),
+            'sensor': 'temperature'
+        })
+    
+    # Process the batch
+    result = processor.process_chunk(batch_data)
+    
+    end_time = time.time()
+    
+    # Record performance metrics
+    monitor.record_processing_time(start_time, end_time)
+    monitor.record_memory_usage()
+    monitor.record_throughput(len(batch_data))
+    
+    if batch_num % 3 == 0:  # Print progress every 3 batches
+        print(f"Batch {batch_num}: Processed {len(batch_data)} points in {end_time - start_time:.3f}s")
+        summary = monitor.get_performance_summary()
+        print(f"  Avg throughput: {summary.get('avg_throughput', 0):.0f} items/sec")
+        print(f"  Memory usage: {summary.get('avg_memory_mb', 0):.1f} MB")
+
+# Final performance summary
+print("\nFinal Performance Summary:")
+print("-" * 30)
+final_summary = monitor.get_performance_summary()
+for metric, value in final_summary.items():
+    if isinstance(value, float):
+        print(f"{metric}: {value:.3f}")
+    else:
+        print(f"{metric}: {value}")
+```
+
+## Conclusion
+
+Real-time scientific data streaming and analysis represents a critical capability for modern research environments. The techniques demonstrated here provide a foundation for building robust, scalable systems that can handle the demands of real-time scientific computing.
+
+Key takeaways:
+
+1. **Architecture matters**: Proper separation of concerns between data ingestion, processing, storage, and visualization
+2. **Optimize for your use case**: Different scientific applications have different latency, throughput, and accuracy requirements
+3. **Plan for scale**: Design systems that can handle increasing data volumes and processing complexity
+4. **Monitor performance**: Continuous monitoring ensures system reliability and helps identify bottlenecks
+5. **Enable interactivity**: Real-time visualizations and dashboards are crucial for responsive scientific workflows
+
+The future of real-time scientific computing will likely involve:
+- **Edge computing** for sensor networks
+- **AI-powered anomaly detection** and pattern recognition
+- **Federated learning** across distributed research sites
+- **Quantum-enhanced** signal processing
+- **Automated experiment control** based on real-time analysis
+
+These capabilities are transforming how we conduct science, enabling new forms of adaptive experiments, real-time hypothesis testing, and collaborative research across global networks.
+
+## References
+
+1. Dean, J. & Ghemawat, S. (2008). "MapReduce: Simplified Data Processing on Large Clusters." *Communications of the ACM* 51, 107-113.
+2. Zaharia, M., et al. (2016). "Apache Spark: A Unified Engine for Big Data Processing." *Communications of the ACM* 59, 56-65.
+3. Akidau, T., et al. (2015). "The Dataflow Model: A Practical Approach to Balancing Correctness, Latency, and Cost." *VLDB Endowment* 8, 1792-1803.
+
+---
+
+*Want to build your own real-time analytics system? Check out our [Scientific Computing Toolkit](https://example.com/toolkit) for ready-to-use components and templates.*

@@ -7,7 +7,9 @@ import atomOneLight from 'react-syntax-highlighter/dist/styles/atom-one-light'
 import { useTheme } from 'next-themes'
 import { useState, useEffect } from 'react'
 import remarkMath from 'remark-math'
+import remarkGfm from 'remark-gfm'
 import rehypeKatex from 'rehype-katex'
+import rehypeRaw from 'rehype-raw'
 import 'katex/dist/katex.min.css'
 import type { CodeBlockProps, BlogContentProps } from '@/types/components'
 
@@ -161,8 +163,11 @@ export default function BlogContent({ content }: BlogContentProps) {
   return (
     <div className="prose prose-lg dark:prose-invert max-w-none">
       <ReactMarkdown
-        remarkPlugins={[remarkMath]}
-        rehypePlugins={[rehypeKatex]}
+        remarkPlugins={[
+          remarkMath,
+          remarkGfm
+        ]}
+        rehypePlugins={[rehypeKatex, rehypeRaw]}
         components={{
           code: CodeBlock,
           // Math rendering - these are the correct property names from rehype-katex
@@ -181,10 +186,98 @@ export default function BlogContent({ content }: BlogContentProps) {
             }
             return <div className={className} {...props}>{children}</div>
           },
+          // HTML Elements
+          iframe: ({ src, title, width = "100%", height = "400", ...props }: any) => (
+            <div className="my-6">
+              <div className="relative rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-800" style={{ paddingBottom: '56.25%', height: 0 }}>
+                <iframe
+                  src={src}
+                  title={title}
+                  width={width}
+                  height={height}
+                  className="absolute top-0 left-0 w-full h-full border-0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                  {...props}
+                />
+              </div>
+            </div>
+          ),
+          // Image component
+          img: ({ src, alt, title, ...props }: any) => (
+            <div className="my-6 text-center">
+              <img
+                src={src}
+                alt={alt || ''}
+                title={title}
+                className="max-w-full h-auto rounded-lg shadow-lg mx-auto"
+                style={{ maxHeight: '500px' }}
+                {...props}
+              />
+              {title && (
+                <p className="text-sm text-gray-600 dark:text-gray-400 italic mt-2">
+                  {title}
+                </p>
+              )}
+            </div>
+          ),
+          // Table components
+          table: ({ children, ...props }: any) => (
+            <div className="overflow-x-auto my-6">
+              <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700 border border-gray-200 dark:border-gray-700 rounded-lg" {...props}>
+                {children}
+              </table>
+            </div>
+          ),
+          thead: ({ children, ...props }: any) => (
+            <thead className="bg-gray-50 dark:bg-gray-800" {...props}>
+              {children}
+            </thead>
+          ),
+          tbody: ({ children, ...props }: any) => (
+            <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700" {...props}>
+              {children}
+            </tbody>
+          ),
+          tr: ({ children, ...props }: any) => (
+            <tr className="hover:bg-gray-50 dark:hover:bg-gray-800" {...props}>
+              {children}
+            </tr>
+          ),
+          th: ({ children, ...props }: any) => (
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider" {...props}>
+              {children}
+            </th>
+          ),
+          td: ({ children, ...props }: any) => (
+            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100" {...props}>
+              {children}
+            </td>
+          ),
+          // Figure components
+          figure: ({ children, ...props }: any) => (
+            <figure className="my-6 text-center" {...props}>
+              {children}
+            </figure>
+          ),
+          figcaption: ({ children, ...props }: any) => (
+            <figcaption className="mt-2 text-sm text-gray-600 dark:text-gray-400 italic" {...props}>
+              {children}
+            </figcaption>
+          ),
+          // Typography components
           h1: ({ children }) => <h1 className="text-3xl font-bold mb-6 mt-8">{children}</h1>,
           h2: ({ children }) => <h2 className="text-2xl font-semibold mb-4 mt-6">{children}</h2>,
           h3: ({ children }) => <h3 className="text-xl font-medium mb-3 mt-5">{children}</h3>,
           p: ({ children }) => <p className="mb-4 leading-relaxed">{children}</p>,
+          em: ({ children }) => {
+            // Check if this is a figure caption
+            const childrenString = String(children);
+            if (childrenString.startsWith('Figure ')) {
+              return <p className="text-center text-sm text-gray-600 dark:text-gray-400 italic mt-2 mb-6">{children}</p>
+            }
+            return <em>{children}</em>
+          },
           a: ({ href, children }) => (
             <a href={href} className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 underline">
               {children}

@@ -99,11 +99,98 @@ const InlineCode = ({ children }: { children: ReactNode }) => {
   return <code className="font-mono">{children}</code>
 }
 
+// Enhanced Table components
+const Table = ({ children, ...props }: { children: ReactNode, [key: string]: any }) => (
+  <div className="overflow-x-auto my-6">
+    <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700 border border-gray-200 dark:border-gray-700 rounded-lg" {...props}>
+      {children}
+    </table>
+  </div>
+)
+
+const TableHead = ({ children, ...props }: { children: ReactNode, [key: string]: any }) => (
+  <thead className="bg-gray-50 dark:bg-gray-800" {...props}>
+    {children}
+  </thead>
+)
+
+const TableBody = ({ children, ...props }: { children: ReactNode, [key: string]: any }) => (
+  <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700" {...props}>
+    {children}
+  </tbody>
+)
+
+const TableRow = ({ children, ...props }: { children: ReactNode, [key: string]: any }) => (
+  <tr className="hover:bg-gray-50 dark:hover:bg-gray-800" {...props}>
+    {children}
+  </tr>
+)
+
+const TableHeader = ({ children, ...props }: { children: ReactNode, [key: string]: any }) => (
+  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider" {...props}>
+    {children}
+  </th>
+)
+
+const TableData = ({ children, ...props }: { children: ReactNode, [key: string]: any }) => (
+  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100" {...props}>
+    {children}
+  </td>
+)
+
+// Enhanced iframe component for YouTube embeds
+const IFrame = ({ src, title, width = "100%", height = "400", ...props }: { 
+  src: string, 
+  title: string, 
+  width?: string | number, 
+  height?: string | number,
+  [key: string]: any 
+}) => (
+  <div className="my-6">
+    <div className="relative rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-800" style={{ paddingBottom: '56.25%', height: 0 }}>
+      <iframe
+        src={src}
+        title={title}
+        width={width}
+        height={height}
+        className="absolute top-0 left-0 w-full h-full border-0"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+        allowFullScreen
+        {...props}
+      />
+    </div>
+  </div>
+)
+
+// Enhanced figure and figcaption components
+const Figure = ({ children, ...props }: { children: ReactNode, [key: string]: any }) => (
+  <figure className="my-6 text-center" {...props}>
+    {children}
+  </figure>
+)
+
+const FigCaption = ({ children, ...props }: { children: ReactNode, [key: string]: any }) => (
+  <figcaption className="mt-2 text-sm text-gray-600 dark:text-gray-400 italic" {...props}>
+    {children}
+  </figcaption>
+)
+
 // Export components object for MDX
 export const MDXComponents = {
   pre: CodeBlock,
   code: InlineCode,
-  // Add other common components
+  // Table components
+  table: Table,
+  thead: TableHead,
+  tbody: TableBody,
+  tr: TableRow,
+  th: TableHeader,
+  td: TableData,
+  // Media components
+  iframe: IFrame,
+  figure: Figure,
+  figcaption: FigCaption,
+  // Typography components
   h1: (props: any) => <h1 className="text-3xl font-bold mb-4" {...props} />,
   h2: (props: any) => <h2 className="text-2xl font-semibold mb-3" {...props} />,
   h3: (props: any) => <h3 className="text-xl font-medium mb-2" {...props} />,
