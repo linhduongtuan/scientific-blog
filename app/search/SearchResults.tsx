@@ -35,7 +35,7 @@ export default function SearchResults() {
   
   const searchParams = useSearchParams()
   const query = searchParams.get('q') || ''
-  const tags = searchParams.get('tags')?.split(',').filter(Boolean) || []
+  const tags = React.useMemo(() => searchParams.get('tags')?.split(',').filter(Boolean) || [], [searchParams])
   const page = parseInt(searchParams.get('page') || '1')
 
 
