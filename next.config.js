@@ -3,7 +3,7 @@ const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
   images: {
-    domains: [], // Add any external image domains you need here
+    domains: ["avatars.githubusercontent.com"], // Allow GitHub avatar images
   },
   // For development, keep dynamic features enabled
   // For production static export, uncomment the following:

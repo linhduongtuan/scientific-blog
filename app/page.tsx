@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import Image from 'next/image'
 
 export default function Home() {
   return (
@@ -14,7 +15,7 @@ export default function Home() {
               PhD in Medical Microbiology & ML Researcher
             </h2>
             <p className="text-lg text-gray-700 dark:text-gray-300 mb-8">
-              Welcome to my personal website! I'm a researcher with a PhD in medical microbiology from the University of Greifswald, Germany, 
+              Welcome to my personal website! I&apos;m a researcher with a PhD in medical microbiology from the University of Greifswald, Germany, 
               currently at KTH Royal Institute of Technology in Stockholm. I specialize in computational biology, medical microbiology, 
               machine learning, and epidemiology. Explore my research, publications, and open-source contributions.
             </p>
@@ -29,10 +30,13 @@ export default function Home() {
           </div>
           <div className="md:w-1/2 mt-10 md:mt-0">
             <div className="relative w-64 h-64 md:w-80 md:h-80 mx-auto rounded-full overflow-hidden border-4 border-white dark:border-gray-800 shadow-lg">
-              <img 
-                src="https://avatars.githubusercontent.com/u/22388092?v=4" 
+              <Image
+                src="https://avatars.githubusercontent.com/u/22388092?v=4"
                 alt="Linh T. Duong"
                 className="w-full h-full object-cover"
+                width={320}
+                height={320}
+                priority
               />
             </div>
           </div>

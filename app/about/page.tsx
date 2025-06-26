@@ -1,4 +1,5 @@
-import Link from 'next/link'
+
+import Image from 'next/image'
 
 export default function About() {
   // Current date and user information
@@ -12,10 +13,13 @@ export default function About() {
       <div className="flex flex-col md:flex-row gap-10 mb-12">
         <div className="md:w-1/3">
           <div className="relative w-full aspect-square rounded-lg overflow-hidden shadow-lg">
-            <img 
-              src="https://avatars.githubusercontent.com/u/22388092?v=4" 
+            <Image
+              src="https://avatars.githubusercontent.com/u/22388092?v=4"
               alt="Linh T. Duong"
               className="w-full h-full object-cover"
+              width={400}
+              height={400}
+              priority
             />
           </div>
         </div>
@@ -33,7 +37,7 @@ export default function About() {
             <p>
               My expertise spans developing machine learning models for medical imaging (particularly chest X-ray analysis 
               for tuberculosis and COVID-19 detection), fine-tuning large language models for medical applications, 
-              and applying graph neural networks to biomedical signal processing. I'm particularly passionate about 
+              and applying graph neural networks to biomedical signal processing. I&apos;m particularly passionate about 
               making advanced AI techniques accessible for medical research and clinical applications.
             </p>
             <p>
@@ -55,7 +59,7 @@ export default function About() {
             <p className="text-gray-600 dark:text-gray-400 mt-2">
               Focus: Computational approaches to microbial pathogenesis and antibiotic resistance
               <br />
-              Thesis: "Machine Learning Applications in Medical Microbiology and Diagnostic Systems"
+              Thesis: &quot;Machine Learning Applications in Medical Microbiology and Diagnostic Systems&quot;
             </p>
           </div>
           
