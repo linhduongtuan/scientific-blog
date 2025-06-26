@@ -9,12 +9,20 @@ export default async function handler(
 ) {
   if (req.method === 'GET') {
     try {
-      const { limit = '50' } = req.query
+      const { limit = '50', roomId = 'general' } = req.query
       
       const messages = await prisma.chatMessage.findMany({
+        where: {
+          roomId: roomId as string
+        },
         take: parseInt(limit as string),
         orderBy: {
           createdAt: 'desc'
+        },
+        include: {
+          user: true,
+          parent: true,
+          replies: true,
         }
       })
 
