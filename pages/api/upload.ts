@@ -31,6 +31,7 @@ export default async function handler(
       fs.mkdirSync(uploadsDir, { recursive: true })
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [fields, files] = await form.parse(req)
     
     const file = Array.isArray(files.file) ? files.file[0] : files.file

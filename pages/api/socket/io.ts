@@ -254,6 +254,7 @@ export default async function ioHandler(
       // Handle file upload
       socket.on('upload_file', async (data) => {
         try {
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
           const { file, fileName, fileType, username, userId, roomId = 'general' } = data
           
           // Generate unique filename
@@ -287,6 +288,7 @@ export default async function ioHandler(
       })
       socket.on('send_private_message', async (data) => {
         try {
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
           const { content, username, userId, recipientUsername } = data
 
           // Find recipient's socket
