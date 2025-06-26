@@ -128,9 +128,9 @@ export default function SubscriptionPage() {
               </p>
             )}
             
-            <p className="text-center text-sm text-gray-500 dark:text-gray-400 mt-4">
-              Cancel anytime. No long-term commitment required.
-            </p>
+      <p className="text-center text-sm text-gray-500 dark:text-gray-400 mt-4">
+        Cancel anytime. No long-term commitment required.
+      </p>
           </div>
         </div>
       </div>
@@ -139,7 +139,7 @@ export default function SubscriptionPage() {
         <p className="font-semibold">Demo Mode Note:</p>
         <p>
           This is a demonstration of the subscription flow. In a production application, this would be connected 
-          to a payment processor like Stripe. For this demo, clicking "Subscribe Now" will immediately grant you 
+          to a payment processor like Stripe. For this demo, clicking &quot;Subscribe Now&quot; will immediately grant you 
           premium access without any actual payment.
         </p>
       </div>

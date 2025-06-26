@@ -61,7 +61,7 @@ export default function SearchResults() {
       } else {
         setError('Search failed. Please try again.')
       }
-    } catch (err) {
+    } catch {
       setError('Search failed. Please try again.')
     } finally {
       setIsLoading(false)
