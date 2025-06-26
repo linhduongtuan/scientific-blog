@@ -35,8 +35,12 @@ export const withErrorBoundary = <P extends object>(
   return function WithErrorBoundaryWrapper(props: P) {
     return React.createElement(
       ErrorBoundary,
-      { fallback: fallback ? React.createElement(fallback, { error: new Error(), resetError: () => {} }) : undefined },
-      React.createElement(Component, props)
+      {
+        fallback: fallback
+          ? React.createElement(fallback, { error: new Error(), resetError: () => {} })
+          : undefined,
+        children: React.createElement(Component, props)
+      }
     )
   }
 }
