@@ -15,7 +15,7 @@ export class AppError extends Error {
   }
 }
 
-export const handleAsyncError = <T extends any[], R>(
+export const handleAsyncError = <T extends unknown[], R>(
   fn: (...args: T) => Promise<R>
 ) => {
   return async (...args: T): Promise<R> => {

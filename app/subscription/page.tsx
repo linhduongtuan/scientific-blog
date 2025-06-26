@@ -106,7 +106,7 @@ export default function SubscriptionPage() {
               </svg>
               <div>
                 <h4 className="font-medium text-gray-900 dark:text-white">Early Access to Papers</h4>
-                <p className="text-gray-500 dark:text-gray-400 text-sm">Get access to papers and articles before they're publicly available</p>
+                <p className="text-gray-500 dark:text-gray-400 text-sm">Get access to papers and articles before they&apos;re publicly available</p>
               </div>
             </li>
           </ul>

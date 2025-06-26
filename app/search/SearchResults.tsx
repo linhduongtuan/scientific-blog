@@ -38,6 +38,8 @@ export default function SearchResults() {
   const tags = searchParams.get('tags')?.split(',').filter(Boolean) || []
   const page = parseInt(searchParams.get('page') || '1')
 
+
+
   useEffect(() => {
     performSearch()
   }, [searchParams])
@@ -109,7 +111,7 @@ export default function SearchResults() {
         <p className="text-gray-600 dark:text-gray-400">
           {pagination?.total || 0} result{(pagination?.total || 0) !== 1 ? 's' : ''} found
           {query && (
-            <span> for "<span className="font-medium">{query}</span>"</span>
+            <span> for &quot;<span className="font-medium">{query}</span>&quot;</span>
           )}
           {tags.length > 0 && (
             <span> in tags: {tags.map(tag => (

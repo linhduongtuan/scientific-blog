@@ -12,7 +12,7 @@ interface BlogPostFrontmatter {
   tags?: string[]; // Make tags optional to handle cases where it's undefined
   coverImage?: string;
   readingTime?: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 interface BlogPost extends BlogPostFrontmatter {

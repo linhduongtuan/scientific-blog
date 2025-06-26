@@ -12,7 +12,7 @@ export function rateLimit(config: RateLimitConfig) {
   return (req: NextRequest) => {
     const ip = req.ip || req.headers.get('x-forwarded-for') || 'unknown'
     const now = Date.now()
-    const windowStart = now - config.windowMs
+    // const windowStart = now - config.windowMs // Unused variable removed
 
     // Clean up old entries
     Array.from(requestCounts.entries()).forEach(([key, value]) => {
