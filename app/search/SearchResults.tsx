@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from 'react'
+import React, { useEffect, useState, useCallback } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 
@@ -40,14 +40,9 @@ export default function SearchResults() {
 
 
 
-  useEffect(() => {
-    performSearch()
-  }, [searchParams])
-
-  const performSearch = async () => {
+  const performSearch = useCallback(async () => {
     setIsLoading(true)
     setError('')
-    
     try {
       const params = new URLSearchParams()
       if (query) params.set('q', query)
@@ -68,7 +63,11 @@ export default function SearchResults() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [query, tags, page])
+
+  useEffect(() => {
+    performSearch()
+  }, [searchParams, performSearch])
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
