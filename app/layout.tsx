@@ -1,10 +1,11 @@
 import { ThemeProvider } from 'next-themes'
 import { AuthProvider } from '@/contexts/AuthContext'
-import { NextAuthProvider } from '@/contexts/NextAuthProvider'
 import { NotificationProvider } from '@/contexts/NotificationContext'
+import { ChatProvider } from '@/contexts/ChatContext'
 import type { Metadata } from 'next'
 import './globals.css'
 import Navigation from './components/Navigation'
+import ChatToggle from './components/ChatToggle'
 
 export const metadata: Metadata = {
   title: 'Scientific Blog - Linh Duong Tuan',
@@ -59,9 +60,9 @@ export default function RootLayout({
         }} />
       </head>
       <body className="min-h-screen bg-white dark:bg-gray-900 text-gray-900 dark:text-white antialiased">
-        <NextAuthProvider>
-          <AuthProvider>
-            <NotificationProvider>
+        <AuthProvider>
+          <NotificationProvider>
+            <ChatProvider>
               <ThemeProvider
                 attribute="class"
                 defaultTheme="system"
@@ -75,10 +76,11 @@ export default function RootLayout({
                 <main className="px-4 sm:px-6 max-w-7xl mx-auto py-6">
                   {children}
                 </main>
+                <ChatToggle />
               </ThemeProvider>
-            </NotificationProvider>
-          </AuthProvider>
-        </NextAuthProvider>
+            </ChatProvider>
+          </NotificationProvider>
+        </AuthProvider>
       </body>
     </html>
   )

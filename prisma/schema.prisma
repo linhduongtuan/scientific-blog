@@ -70,5 +70,14 @@ model Comment {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
+model ChatMessage {
+  id        String   @id @default(cuid())
+  content   String
+  createdAt DateTime @default(now())
+  userId    String?  // Optional, for authenticated users
+  username  String   // For display name (authenticated or guest)
+  isSystem  Boolean  @default(false)
+}
+
 // SQLite doesn't support enums, using String instead
 // Valid values: "USER", "ADMIN"
