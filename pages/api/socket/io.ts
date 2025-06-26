@@ -50,6 +50,12 @@ export default async function ioHandler(
     io.on('connection', (socket) => {
       console.log('User connected:', socket.id)
 
+      // Handle ping for connection testing
+      socket.on('ping', () => {
+        console.log('Ping received from:', socket.id)
+        socket.emit('pong')
+      })
+
       // Join general room by default
       socket.join('general')
 
@@ -83,13 +89,23 @@ export default async function ioHandler(
       // Handle new message
       socket.on('send_message', async (data) => {
         try {
+          console.log('📨 Received message:', data)
           const { content, username, userId, roomId = 'general', replyToId, fileUrl, fileName, fileType } = data
+          
+          if (!content || content.trim() === '') {
+            console.warn('Empty message content received')
+            socket.emit('error', { message: 'Message content cannot be empty' })
+            return
+          }
+          
+          // Handle user ID - use null for anonymous users now that schema supports it
+          const finalUserId = (!userId || userId === 'anonymous') ? null : userId
           
           // Save message to database
           const message = await prisma.chatMessage.create({
             data: {
               content,
-              userId: userId || '1', // Default to user 1 if no userId provided
+              userId: finalUserId,
               roomId,
               parentId: replyToId || null,
               fileUrl: fileUrl || null,
@@ -102,8 +118,10 @@ export default async function ioHandler(
             }
           })
 
+          console.log('💾 Message saved to database:', message.id)
+
           // Broadcast to all clients in the room
-          io.to(roomId).emit('receive_message', {
+          const messageToSend = {
             id: message.id,
             content: message.content,
             username: message.user?.name || username || 'Anonymous',
@@ -116,7 +134,11 @@ export default async function ioHandler(
             fileUrl: message.fileUrl,
             fileName: message.fileName,
             fileType: message.fileType,
-          })
+            replyToId: message.parentId
+          }
+
+          io.to(roomId).emit('receive_message', messageToSend)
+          console.log('📡 Message broadcasted to room:', roomId)
         } catch (error) {
           console.error('Error saving message:', error)
           socket.emit('error', { message: 'Failed to send message' })
@@ -135,35 +157,39 @@ export default async function ioHandler(
       })
 
       // Handle message reactions
-      // Handle message reactions
       socket.on('add_reaction', async (data) => {
         try {
           const { messageId, emoji, username, userId } = data
+          
+          const finalUserId = (!userId || userId === 'anonymous') ? null : userId
           
           const reaction = await prisma.chatReaction.create({
             data: {
               messageId,
               emoji,
-              userId: userId || null,
+              userId: finalUserId,
             }
           })
 
           // Broadcast reaction to all clients
-          io.emit('reaction_added', { messageId, reaction })
+          io.emit('reaction_added', { messageId, reaction: { ...reaction, username } })
         } catch (error) {
           console.error('Error adding reaction:', error)
           socket.emit('error', { message: 'Failed to add reaction' })
         }
       })
+      
       socket.on('remove_reaction', async (data) => {
         try {
           const { messageId, emoji, username, userId } = data
+          
+          const finalUserId = (!userId || userId === 'anonymous') ? null : userId
           
           const reaction = await prisma.chatReaction.findFirst({
             where: {
               messageId,
               emoji,
-              userId: userId || null,
+              userId: finalUserId,
             }
           })
 
@@ -173,7 +199,7 @@ export default async function ioHandler(
             })
 
             // Broadcast reaction removal to all clients
-            io.emit('reaction_removed', { messageId, reaction })
+            io.emit('reaction_removed', { messageId, reaction: { ...reaction, username } })
           }
         } catch (error) {
           console.error('Error removing reaction:', error)
@@ -183,13 +209,20 @@ export default async function ioHandler(
       // Handle message search
       socket.on('search_messages', async (data) => {
         try {
+          console.log('🔍 Received search request:', data)
           const { query, roomId } = data
+          
+          if (!query || query.trim() === '') {
+            console.warn('Empty search query received')
+            socket.emit('error', { message: 'Search query cannot be empty' })
+            return
+          }
           
           const messages = await prisma.chatMessage.findMany({
             where: {
               roomId,
               content: {
-                contains: query,
+                contains: query
               }
             },
             include: {
@@ -198,8 +231,11 @@ export default async function ioHandler(
             },
             orderBy: {
               createdAt: 'desc'
-            }
+            },
+            take: 50 // Limit results
           })
+
+          console.log(`🔍 Found ${messages.length} messages for query "${query}"`)
 
           // Transform messages to include username
           const transformedMessages = messages.map(msg => ({
@@ -208,6 +244,7 @@ export default async function ioHandler(
           }))
 
           socket.emit('search_results', { results: transformedMessages })
+          console.log('📡 Search results sent to client')
         } catch (error) {
           console.error('Error searching messages:', error)
           socket.emit('error', { message: 'Failed to search messages' })

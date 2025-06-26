@@ -23,13 +23,25 @@ export default async function handler(
           user: true,
           parent: true,
           replies: true,
+          reactions: {
+            include: {
+              user: true
+            }
+          }
         }
       })
 
-      // Reverse to show oldest first
-      const reversedMessages = messages.reverse()
+      // Reverse to show oldest first and transform the data
+      const transformedMessages = messages.reverse().map(msg => ({
+        ...msg,
+        username: msg.user?.name || msg.user?.email?.split('@')[0] || 'Anonymous',
+        reactions: msg.reactions.map(reaction => ({
+          ...reaction,
+          username: reaction.user?.name || reaction.user?.email?.split('@')[0] || 'Anonymous'
+        }))
+      }))
 
-      res.status(200).json({ messages: reversedMessages })
+      res.status(200).json({ messages: transformedMessages })
     } catch (error) {
       console.error('Error fetching chat messages:', error)
       res.status(500).json({ error: 'Failed to fetch messages' })

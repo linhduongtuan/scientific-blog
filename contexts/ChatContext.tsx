@@ -80,6 +80,8 @@ export function ChatProvider({ children }: ChatProviderProps) {
     const onConnect = () => {
       console.log('✅ Connected to chat server')
       setIsConnected(true)
+      // Test connection by emitting a ping
+      socketInstance.emit('ping')
       // Room joining is now handled in separate useEffect
     }
 
@@ -142,6 +144,10 @@ export function ChatProvider({ children }: ChatProviderProps) {
       console.error('Chat error:', error)
     }
 
+    const onPong = () => {
+      console.log('🏓 Pong received - connection is working')
+    }
+
     socketInstance.on('connect', onConnect)
     socketInstance.on('disconnect', onDisconnect)
     socketInstance.on('connect_error', onConnectError)
@@ -154,6 +160,7 @@ export function ChatProvider({ children }: ChatProviderProps) {
     socketInstance.on('file_uploaded', onFileUploaded)
     socketInstance.on('receive_private_message', onReceivePrivateMessage)
     socketInstance.on('error', onError)
+    socketInstance.on('pong', onPong)
 
     setSocket(socketInstance)
 
@@ -173,6 +180,7 @@ export function ChatProvider({ children }: ChatProviderProps) {
       socketInstance.off('file_uploaded', onFileUploaded)
       socketInstance.off('receive_private_message', onReceivePrivateMessage)
       socketInstance.off('error', onError)
+      socketInstance.off('pong', onPong)
       console.log('🔌 Disconnecting socket...')
       socketInstance.disconnect()
       setSocket(null)
@@ -192,16 +200,26 @@ export function ChatProvider({ children }: ChatProviderProps) {
 
   const loadChatHistory = async () => {
     try {
+      console.log('📚 Loading chat history for room:', currentRoom)
       const response = await fetch(`/api/chat/messages?limit=50&roomId=${currentRoom}`)
       if (response.ok) {
         const data = await response.json()
-        setMessages(data.messages || [])
+        console.log('📚 Loaded', data.messages?.length || 0, 'messages for room:', currentRoom)
+        
+        // Transform messages to include username for display
+        const transformedMessages = (data.messages || []).map((msg: any) => ({
+          ...msg,
+          username: msg.user?.name || msg.user?.email?.split('@')[0] || 'Anonymous',
+          reactions: msg.reactions || []
+        }))
+        
+        setMessages(transformedMessages)
       } else {
-        console.warn('Failed to load chat history, setting empty messages')
+        console.warn('Failed to load chat history for room:', currentRoom, '- Status:', response.status)
         setMessages([])
       }
     } catch (error) {
-      console.error('Error loading chat history:', error)
+      console.error('Error loading chat history for room:', currentRoom, '- Error:', error)
       setMessages([])
     }
   }
@@ -237,36 +255,57 @@ export function ChatProvider({ children }: ChatProviderProps) {
   }
 
   const sendMessage = (content: string, replyToId?: string) => {
-    if (!socket || !content.trim()) {
-      console.warn('Cannot send message: socket not connected or empty content')
+    if (!content.trim()) {
+      console.warn('Cannot send message: empty content')
+      return
+    }
+
+    if (!socket) {
+      console.error('Cannot send message: socket not initialized')
       return
     }
 
     if (!isConnected) {
-      console.warn('Cannot send message: not connected to server')
+      console.error('Cannot send message: not connected to server')
       return
     }
 
     const username = getUsername()
-    const userId = user?.id
+    const userId = user?.id || 'anonymous'
 
     console.log('📤 Sending message:', { content, username, userId, roomId: currentRoom })
 
-    socket.emit('send_message', {
-      content: content.trim(),
-      username,
-      userId,
-      roomId: currentRoom,
-      replyToId
-    })
+    try {
+      socket.emit('send_message', {
+        content: content.trim(),
+        username,
+        userId,
+        roomId: currentRoom,
+        replyToId
+      })
+      console.log('✅ Message sent successfully')
+    } catch (error) {
+      console.error('❌ Failed to send message:', error)
+    }
   }
 
   const joinRoom = (roomId: string) => {
-    if (!socket) return
+    if (!socket) {
+      console.warn('Cannot join room: socket not initialized')
+      return
+    }
     
-    socket.emit('join_room', roomId)
+    console.log('🏠 Switching to room:', roomId, 'from:', currentRoom)
+    
+    // First clear current messages immediately for visual feedback
+    setMessages([])
+    setSearchResults([]) // Also clear search results
+    
+    // Then update the room and emit the join event
     setCurrentRoom(roomId)
-    setMessages([]) // Clear messages when switching rooms
+    socket.emit('join_room', roomId)
+    
+    // Messages will be loaded by the useEffect that watches currentRoom changes
   }
 
   const addReaction = (messageId: string, emoji: string) => {
@@ -291,26 +330,46 @@ export function ChatProvider({ children }: ChatProviderProps) {
   }
 
   const searchMessages = (query: string) => {
-    if (!socket || !query.trim()) {
-      console.warn('Cannot search: socket not connected or empty query')
+    if (!query.trim()) {
+      console.warn('Cannot search: empty query')
+      return
+    }
+
+    if (!socket) {
+      console.error('Cannot search: socket not initialized')
       return
     }
 
     if (!isConnected) {
-      console.warn('Cannot search: not connected to server')
+      console.error('Cannot search: not connected to server')
       return
     }
 
     console.log('🔍 Searching for:', query, 'in room:', currentRoom)
 
-    socket.emit('search_messages', {
-      query: query.trim(),
-      roomId: currentRoom
-    })
+    try {
+      socket.emit('search_messages', {
+        query: query.trim(),
+        roomId: currentRoom
+      })
+      console.log('✅ Search request sent successfully')
+    } catch (error) {
+      console.error('❌ Failed to search messages:', error)
+    }
   }
 
   const uploadFile = async (file: File) => {
-    if (!socket) return
+    if (!socket) {
+      console.error('Cannot upload file: socket not initialized')
+      return
+    }
+
+    if (!isConnected) {
+      console.error('Cannot upload file: not connected to server')
+      return
+    }
+
+    console.log('📎 Starting file upload:', file.name, file.type, file.size)
 
     try {
       const formData = new FormData()
@@ -323,22 +382,30 @@ export function ChatProvider({ children }: ChatProviderProps) {
       
       if (response.ok) {
         const data = await response.json()
+        console.log('✅ File uploaded successfully:', data)
         
         // Send the file info via socket
+        const username = getUsername()
+        const userId = user?.id || 'anonymous'
+        
         socket.emit('send_message', {
           content: `📎 Shared a file: ${data.fileName}`,
           fileUrl: data.fileUrl,
           fileName: data.fileName,
           fileType: data.fileType,
-          username: getUsername(),
-          userId: user?.id,
+          username,
+          userId,
           roomId: currentRoom
         })
+        console.log('✅ File message sent successfully')
       } else {
-        console.error('Failed to upload file')
+        const errorData = await response.json()
+        console.error('❌ Failed to upload file:', errorData)
+        throw new Error(errorData.error || 'Upload failed')
       }
     } catch (error) {
-      console.error('Error uploading file:', error)
+      console.error('❌ Error uploading file:', error)
+      // You might want to show an error message to the user here
     }
   }
 

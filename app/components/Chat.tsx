@@ -170,9 +170,19 @@ const SearchComponent = ({ onSearch, searchResults, onClearSearch }: {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
-    if (query.trim()) {
+    console.log('🔍 Search button clicked - query:', query)
+    
+    if (!query.trim()) {
+      console.warn('Cannot search: query is empty')
+      return
+    }
+
+    try {
       onSearch(query.trim())
       setIsOpen(true)
+      console.log('✅ Search request sent')
+    } catch (error) {
+      console.error('❌ Search failed:', error)
     }
   }
 
@@ -195,6 +205,9 @@ const SearchComponent = ({ onSearch, searchResults, onClearSearch }: {
         </div>
         <button
           type="submit"
+          onClick={(e) => {
+            console.log('🔍 Search button clicked (onClick) - query:', query)
+          }}
           className="px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-r-lg hover:from-blue-700 hover:to-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200 shadow-md hover:shadow-lg"
         >
           Search
@@ -490,12 +503,28 @@ export default function Chat({ isOpen, onCloseAction }: ChatProps) {
 
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!inputMessage.trim()) return
+    
+    console.log('📤 Send button clicked - message:', inputMessage, 'connected:', isConnected)
+    
+    if (!inputMessage.trim()) {
+      console.warn('Cannot send: message is empty')
+      return
+    }
 
-    sendMessage(inputMessage, replyTo?.id)
-    setInputMessage('')
-    setReplyTo(null)
-    stopTyping()
+    if (!isConnected) {
+      console.error('Cannot send: not connected to chat server')
+      return
+    }
+
+    try {
+      sendMessage(inputMessage, replyTo?.id)
+      setInputMessage('')
+      setReplyTo(null)
+      stopTyping()
+      console.log('✅ Message sent successfully')
+    } catch (error) {
+      console.error('❌ Error sending message:', error)
+    }
   }
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -517,16 +546,37 @@ export default function Chat({ isOpen, onCloseAction }: ChatProps) {
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
-    if (file && uploadFile) {
-      try {
-        await uploadFile(file)
-        setInputMessage('')
-        if (fileInputRef.current) {
-          fileInputRef.current.value = ''
-        }
-      } catch (error) {
-        console.error('File upload failed:', error)
+    console.log('📎 File upload triggered:', file?.name, file?.type, file?.size)
+    
+    if (!file) {
+      console.warn('No file selected')
+      return
+    }
+
+    if (!isConnected) {
+      console.error('Cannot upload: not connected to chat server')
+      alert('Cannot upload file: Not connected to chat server')
+      return
+    }
+
+    if (!uploadFile) {
+      console.error('Upload function not available')
+      alert('Upload function not available')
+      return
+    }
+
+    try {
+      console.log('📎 Starting file upload process...')
+      await uploadFile(file)
+      
+      // Clear the input after successful upload
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ''
       }
+      console.log('✅ File upload completed successfully')
+    } catch (error) {
+      console.error('❌ File upload failed:', error)
+      alert('File upload failed: ' + (error instanceof Error ? error.message : 'Unknown error'))
     }
   }
 
@@ -795,13 +845,24 @@ export default function Chat({ isOpen, onCloseAction }: ChatProps) {
                     onChange={handleFileUpload}
                     className="hidden"
                     accept="image/*,video/*,.pdf,.doc,.docx,.txt"
+                    id="chat-file-input"
                   />
                   <button
                     type="button"
-                    onClick={() => fileInputRef.current?.click()}
+                    onClick={(e) => {
+                      e.preventDefault()
+                      e.stopPropagation()
+                      console.log('📎 Attach button clicked - connected:', isConnected)
+                      if (fileInputRef.current) {
+                        fileInputRef.current.click()
+                      } else {
+                        console.error('File input ref is null')
+                      }
+                    }}
                     disabled={!isConnected}
                     className="p-2.5 text-gray-500 hover:text-purple-600 dark:text-gray-400 dark:hover:text-purple-400 disabled:opacity-50 rounded-xl hover:bg-gradient-to-r hover:from-purple-100 hover:to-pink-100 dark:hover:from-purple-900/30 dark:hover:to-pink-900/30 transition-all duration-300 hover:scale-110 active:scale-95 group"
                     title="Upload file"
+                    aria-label="Upload file"
                   >
                     <svg className="w-5 h-5 group-hover:rotate-12 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
@@ -814,6 +875,9 @@ export default function Chat({ isOpen, onCloseAction }: ChatProps) {
               <button
                 type="submit"
                 disabled={!isConnected || !inputMessage.trim()}
+                onClick={(e) => {
+                  console.log('📤 Send button clicked (onClick) - message:', inputMessage, 'connected:', isConnected)
+                }}
                 className="relative px-4 py-2.5 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 hover:from-blue-700 hover:via-purple-700 hover:to-pink-700 text-white rounded-2xl focus:outline-none focus:ring-4 focus:ring-blue-500/30 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 hover:shadow-2xl hover:shadow-blue-500/25 hover:scale-110 active:scale-95 transform-gpu group overflow-hidden"
                 aria-label="Send message"
               >
