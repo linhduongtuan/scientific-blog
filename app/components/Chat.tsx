@@ -136,13 +136,6 @@ export default function Chat({ isOpen, onCloseAction }: ChatProps) {
                     }`}>
                       {!isOwn && (
                         <div className="flex items-center space-x-1 mb-1">
-                          {message.user?.image && (
-                            <img 
-                              src={message.user.image} 
-                              alt={message.username}
-                              className="w-4 h-4 rounded-full"
-                            />
-                          )}
                           <span className="font-semibold text-xs text-blue-600 dark:text-blue-400">
                             {message.username}
                           </span>
