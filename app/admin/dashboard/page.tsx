@@ -5,12 +5,21 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 
 export default function AdminDashboard() {
-  const [users, setUsers] = useState<any[]>([]);
+  interface DashboardUser {
+    id: string;
+    name: string;
+    email: string;
+    emailVerified: string | null;
+    role: 'ADMIN' | 'USER';
+    subscribed: boolean;
+  }
+
+  const [users, setUsers] = useState<DashboardUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'content'>('overview');
   const router = useRouter();
-  const { user, isAdmin, status } = useAuth();
+  const { user: _user, isAdmin, status } = useAuth();
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -63,8 +72,12 @@ export default function AdminDashboard() {
             subscribed: false
           }
         ]);
-      } catch (err: any) {
-        setError(err.message || "An error occurred");
+      } catch (err) {
+        if (err instanceof Error) {
+          setError(err.message);
+        } else {
+          setError("An error occurred");
+        }
       } finally {
         setLoading(false);
       }
@@ -75,7 +88,7 @@ export default function AdminDashboard() {
     }
   }, [isAdmin, router, status]);
 
-  async function handleToggleSubscription(userId: string, currentStatus: boolean) {
+  async function handleToggleSubscription(userId: string, _currentStatus: boolean) {
     try {
       // Simulating subscription toggle
       await new Promise(resolve => setTimeout(resolve, 500));
@@ -86,12 +99,16 @@ export default function AdminDashboard() {
           ? { ...user, subscribed: !user.subscribed } 
           : user
       ));
-    } catch (err: any) {
-      setError(err.message || "An error occurred");
+    } catch (err) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError("An error occurred");
+      }
     }
   }
 
-  async function handleToggleAdmin(userId: string, currentRole: string) {
+  async function handleToggleAdmin(userId: string, currentRole: 'ADMIN' | 'USER') {
     try {
       // Simulating role toggle
       await new Promise(resolve => setTimeout(resolve, 500));
@@ -102,8 +119,12 @@ export default function AdminDashboard() {
           ? { ...user, role: currentRole === "ADMIN" ? "USER" : "ADMIN" } 
           : user
       ));
-    } catch (err: any) {
-      setError(err.message || "An error occurred");
+    } catch (err) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError("An error occurred");
+      }
     }
   }
 
