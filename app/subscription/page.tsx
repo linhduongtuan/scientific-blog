@@ -34,8 +34,12 @@ export default function SubscriptionPage() {
         // Force reload to update auth context
         window.location.href = "/profile";
       }
-    } catch (err: any) {
-      setError(err.message || "An error occurred");
+    } catch (err) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError("An error occurred");
+      }
     } finally {
       setLoading(false);
     }

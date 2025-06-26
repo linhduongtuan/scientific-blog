@@ -62,7 +62,7 @@ export async function GET(request: NextRequest) {
           updatedAt: true,
           _count: {
             select: {
-              comments: true
+              Comment: true
             }
           }
         },

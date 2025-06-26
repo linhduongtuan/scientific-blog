@@ -10,6 +10,7 @@ import fs from 'fs'
 const prisma = new PrismaClient()
 
 // Configure multer for file uploads
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const upload = multer({
   dest: 'public/uploads/',
   limits: {
@@ -31,7 +32,7 @@ export default async function ioHandler(
     }
     
     // Create new Socket.IO server
-    const httpServer: NetServer = res.socket.server as any
+    const httpServer: NetServer = res.socket.server as unknown as NetServer
     const io = new ServerIO(httpServer, {
       path: '/api/socket/io',
       addTrailingSlash: false,

@@ -148,7 +148,7 @@ export default function SearchResults() {
               </h2>
               
               <p className="text-gray-700 dark:text-gray-300 mb-4 line-clamp-3">
-                {result.excerpt}
+                {result.excerpt.replace(/"/g, '&quot;')}
               </p>
               
               {result.tags && result.tags.length > 0 && (
