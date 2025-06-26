@@ -34,7 +34,7 @@ export async function GET(
         updatedAt: true,
         _count: {
           select: {
-            comments: true
+            Comment: true
           }
         }
       }
@@ -48,14 +48,14 @@ export async function GET(
     }
 
     return NextResponse.json(user)
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error fetching user:", error)
     
-    if (error.message === "Authentication required") {
+    if (error instanceof Error && error.message === "Authentication required") {
       return NextResponse.json({ error: "Please sign in" }, { status: 401 })
     }
     
-    if (error.message === "Admin access required") {
+    if (error instanceof Error && error.message === "Admin access required") {
       return NextResponse.json({ error: "Admin access required" }, { status: 403 })
     }
     
@@ -97,29 +97,30 @@ export async function PATCH(
     })
 
     return NextResponse.json(updatedUser)
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error updating user:", error)
     
-    if (error.name === 'ZodError') {
+    // ZodError safe check
+    if (typeof error === 'object' && error !== null && 'name' in error && (error as { name?: string }).name === 'ZodError') {
       return NextResponse.json(
-        { error: "Invalid user data", details: error.errors },
+        { error: "Invalid user data", details: (error as any).errors },
         { status: 400 }
       )
     }
     
-    if (error.message === "Authentication required") {
+    if (error instanceof Error && error.message === "Authentication required") {
       return NextResponse.json({ error: "Please sign in" }, { status: 401 })
     }
     
-    if (error.message === "Admin access required") {
+    if (error instanceof Error && error.message === "Admin access required") {
       return NextResponse.json({ error: "Admin access required" }, { status: 403 })
     }
     
-    if (error.code === 'P2002') {
+    if (error && typeof error === 'object' && 'code' in error && (error as any).code === 'P2002') {
       return NextResponse.json({ error: "Email already exists" }, { status: 409 })
     }
     
-    if (error.code === 'P2025') {
+    if (error && typeof error === 'object' && 'code' in error && (error as any).code === 'P2025') {
       return NextResponse.json({ error: "User not found" }, { status: 404 })
     }
     
@@ -147,18 +148,18 @@ export async function DELETE(
     })
 
     return NextResponse.json({ message: "User deleted successfully" })
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error deleting user:", error)
     
-    if (error.message === "Authentication required") {
+    if (error instanceof Error && error.message === "Authentication required") {
       return NextResponse.json({ error: "Please sign in" }, { status: 401 })
     }
     
-    if (error.message === "Admin access required") {
+    if (error instanceof Error && error.message === "Admin access required") {
       return NextResponse.json({ error: "Admin access required" }, { status: 403 })
     }
     
-    if (error.code === 'P2025') {
+    if (error && typeof error === 'object' && 'code' in error && (error as any).code === 'P2025') {
       return NextResponse.json({ error: "User not found" }, { status: 404 })
     }
     
