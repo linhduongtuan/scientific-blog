@@ -29,6 +29,7 @@ export async function GET(request: NextRequest) {
     const offset = (page - 1) * limit
 
     // Build where clause
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const where: any = {}
     
     if (search) {
@@ -84,17 +85,16 @@ export async function GET(request: NextRequest) {
         hasMore: offset + limit < total
       }
     })
-  } catch (error: any) {
+  } catch (error) {
     console.error("Error fetching users:", error)
-    
-    if (error.message === "Authentication required") {
+    const err = error as Error
+    if (err.message === "Authentication required") {
       return NextResponse.json(
         { error: "Please sign in" },
         { status: 401 }
       )
     }
-    
-    if (error.message === "Admin access required") {
+    if (err.message === "Admin access required") {
       return NextResponse.json(
         { error: "Admin access required" },
         { status: 403 }

@@ -19,6 +19,7 @@ export default function AdminDashboard() {
   const [error, setError] = useState("");
   const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'content'>('overview');
   const router = useRouter();
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { user: _user, isAdmin, status } = useAuth();
 
   useEffect(() => {
@@ -88,6 +89,7 @@ export default function AdminDashboard() {
     }
   }, [isAdmin, router, status]);
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   async function handleToggleSubscription(userId: string, _currentStatus: boolean) {
     try {
       // Simulating subscription toggle

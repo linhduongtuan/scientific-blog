@@ -1,4 +1,6 @@
+
 "use client";
+import React from "react";
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
@@ -41,7 +43,7 @@ export default function ContentManagement() {
 
 
   // Move fetchPosts above useEffect and wrap in useCallback to fix missing dependency warning
-  const fetchPosts = async () => {
+  const fetchPosts = React.useCallback(async () => {
     try {
       setLoading(true);
       // Simulate API call - in real app, this would fetch from your CMS/database
@@ -93,7 +95,7 @@ export default function ContentManagement() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [addNotification]);
 
   useEffect(() => {
     if (status === "unauthenticated") {
