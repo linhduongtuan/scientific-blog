@@ -294,8 +294,8 @@ export default async function ioHandler(
 
           // Find recipient's socket
           const recipientSocket = Array.from(io.sockets.sockets.values()).find(
-            (s) => s.data.username === recipientUsername
-          );
+            (s) => (s as any).data.username === recipientUsername
+          ) as typeof socket | undefined;
 
           if (recipientSocket) {
             // Save private message to database

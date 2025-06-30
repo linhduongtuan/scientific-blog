@@ -24,7 +24,6 @@ export default function RecruitPage() {
     coverLetter: "",
     coverLetterFile: null as File | null,
     cv: null as File | null,
-    coverLetterFile: null as File | null,
     recommendationLetters: [] as File[],
     certificates: [] as File[],
   });
@@ -236,7 +235,7 @@ export default function RecruitPage() {
             {form.recommendationLetters.length < 3 && (
               <button
                 type="button"
-                className="mt-1 px-2 py-1 rounded text-sm bg-blue-600 text-white dark:bg-blue-400 dark:text-black hover:bg-blue-700 dark:hover:bg-blue-300 transition-colors"
+                className="mt-1 px-2 py-1 rounded text-sm bg-blue-600 text-white dark:bg-blue-300 dark:text-blue-900 hover:bg-blue-700 dark:hover:bg-blue-200 transition-colors border border-blue-700 dark:border-blue-800 font-semibold shadow"
                 onClick={() => setForm(prev => ({ ...prev, recommendationLetters: [...prev.recommendationLetters, null as any] }))}
               >Add another</button>
             )}
@@ -275,7 +274,7 @@ export default function RecruitPage() {
             {form.certificates.length < 5 && (
               <button
                 type="button"
-                className="mt-1 px-2 py-1 rounded text-sm bg-blue-600 text-white dark:bg-blue-400 dark:text-black hover:bg-blue-700 dark:hover:bg-blue-300 transition-colors"
+                className="mt-1 px-2 py-1 rounded text-sm bg-blue-600 text-white dark:bg-blue-300 dark:text-blue-900 hover:bg-blue-700 dark:hover:bg-blue-200 transition-colors border border-blue-700 dark:border-blue-800 font-semibold shadow"
                 onClick={() => setForm(prev => ({ ...prev, certificates: [...prev.certificates, null as any] }))}
               >Add another</button>
             )}
