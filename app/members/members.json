@@ -1,0 +1,5 @@
+[
+  { "name": "Dr. Linh Duong", "role": "Principal Investigator", "image": "/images/linh.jpg", "bio": "Expert in computational biology and AI for healthcare." },
+  { "name": "Jane Smith", "role": "Postdoctoral Fellow", "image": "/images/jane.jpg", "bio": "Focuses on genomics and machine learning." },
+  { "name": "John Doe", "role": "PhD Student", "image": "/images/john.jpg", "bio": "Works on digital health platforms." }
+]

@@ -1,20 +1,6 @@
-// NextAuth route is temporarily disabled
-// This file contains placeholder endpoints until authentication is properly configured
 
-import { NextRequest, NextResponse } from 'next/server'
+import NextAuth from "next-auth"
+import { authOptions } from "./authOptions"
 
-// Placeholder GET handler
-export async function GET(req: NextRequest) {
-  return NextResponse.json({ 
-    message: 'NextAuth is temporarily disabled',
-    status: 'placeholder' 
-  })
-}
-
-// Placeholder POST handler
-export async function POST(req: NextRequest) {
-  return NextResponse.json({ 
-    message: 'NextAuth is temporarily disabled',
-    status: 'placeholder' 
-  })
-}
+const handler = NextAuth(authOptions)
+export { handler as GET, handler as POST }

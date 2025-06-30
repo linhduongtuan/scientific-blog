@@ -1,13 +1,12 @@
-// Temporarily disabled NextAuth imports for build fix
-// import { getServerSession } from "next-auth/next"
-// import { authOptions } from "@/app/api/auth/[...nextauth]/route"
+import { getServerSession } from "next-auth/next"
+import { authOptions } from "@/app/api/auth/authOptions"
 import { prisma } from "./prisma"
 import bcrypt from "bcrypt"
 import { SignUpInput } from "./validation"
 
 export async function getCurrentUser() {
-  // Mock implementation
-  return null
+  const session = await getServerSession(authOptions)
+  return session?.user
 }
 
 export async function requireAuth() {
