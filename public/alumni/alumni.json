@@ -1,0 +1,38 @@
+[
+  {
+    "name": "Dr. Robert Anderson",
+    "graduationYear": 2023,
+    "current": "Research Scientist",
+    "occupation": "Lead AI Researcher",
+    "company": "TechInnovate",
+    "image": "/images/team/placeholder.svg",
+    "bio": "Specialized in machine learning algorithms for scientific applications."
+  },
+  {
+    "name": "Dr. Lisa Wang",
+    "graduationYear": 2022,
+    "current": "Assistant Professor",
+    "occupation": "Faculty Member",
+    "company": "Stanford University",
+    "image": "/images/team/placeholder.svg",
+    "bio": "Published groundbreaking research in quantum computing applications."
+  },
+  {
+    "name": "James Peterson",
+    "graduationYear": 2021,
+    "current": "PhD Graduate",
+    "occupation": "Founder",
+    "company": "DataSense Technologies",
+    "image": "/images/team/placeholder.svg",
+    "bio": "Developed novel approaches to large-scale data visualization."
+  },
+  {
+    "name": "Maria Gonzalez",
+    "graduationYear": 2020,
+    "current": "Senior Data Scientist",
+    "occupation": "Team Lead",
+    "company": "Bioinformatics Inc.",
+    "image": "/images/team/placeholder.svg",
+    "bio": "Expert in computational biology and genetic sequencing algorithms."
+  }
+]

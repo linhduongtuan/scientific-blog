@@ -1,0 +1,26 @@
+[
+  {
+    "name": "Dr. Jane Smith",
+    "role": "Principal Investigator",
+    "image": "/images/team/placeholder.svg",
+    "bio": "Ph.D. in Computer Science with a focus on AI and Machine Learning."
+  },
+  {
+    "name": "Dr. Michael Chen",
+    "role": "Senior Researcher",
+    "image": "/images/team/placeholder.svg",
+    "bio": "Specializes in data visualization and computational modeling."
+  },
+  {
+    "name": "Sarah Johnson",
+    "role": "Ph.D. Candidate",
+    "image": "/images/team/placeholder.svg",
+    "bio": "Researching applications of deep learning in climate science."
+  },
+  {
+    "name": "David Rodriguez",
+    "role": "Research Assistant",
+    "image": "/images/team/placeholder.svg",
+    "bio": "Working on optimization algorithms for scientific computing."
+  }
+]
