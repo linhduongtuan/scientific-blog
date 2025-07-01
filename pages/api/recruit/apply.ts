@@ -11,14 +11,29 @@ export const config = {
 };
 
 const uploadDir = path.join(process.cwd(), 'public/uploads');
-fs.mkdirSync(uploadDir, { recursive: true });
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
+
+// Allowed file types
+const ALLOWED_FILE_TYPES = ['.pdf', '.doc', '.docx'];
+const ALLOWED_MIME_TYPES = [
+  'application/pdf',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+];
+
+// File size limits (bytes)
+const MAX_CV_SIZE = 5 * 1024 * 1024; // 5MB
+const MAX_COVER_LETTER_SIZE = 3 * 1024 * 1024; // 3MB
+const MAX_RECOMMENDATION_SIZE = 3 * 1024 * 1024; // 3MB each
+const MAX_CERTIFICATE_SIZE = 3 * 1024 * 1024; // 3MB each
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  // We'll handle file size validation per file below, so set a high maxFileSize
   const form = new IncomingForm({
     uploadDir,
     keepExtensions: true,
@@ -35,83 +50,164 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
   }
 
+  // Helper functions
+  const getField = (f: any) => Array.isArray(f) ? f[0] : f || '';
+  
+  const getFilePath = (file: any) => {
+    if (!file || Array.isArray(file)) return '';
+    return (file.filepath || file.path) ?? '';
+  };
+  
+  const getFilePaths = (fileOrArr: any): string[] => {
+    if (!fileOrArr) return [];
+    if (Array.isArray(fileOrArr)) return fileOrArr.map(getFilePath).filter(Boolean);
+    const single = getFilePath(fileOrArr);
+    return single ? [single] : [];
+  };
+
+  const validateFileType = (file: any, fileName: string): boolean => {
+    const ext = path.extname(fileName).toLowerCase();
+    const mimeType = file.mimetype || '';
+    return ALLOWED_FILE_TYPES.includes(ext) && ALLOWED_MIME_TYPES.includes(mimeType);
+  };
+
+  const validateAndCleanupFile = (file: any, maxSize: number, fileType: string) => {
+    if (!file || Array.isArray(file)) return null;
+    
+    if (file.size > maxSize) {
+      const filePath = getFilePath(file);
+      if (filePath && fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+      }
+      throw new Error(`${fileType} file is too large (max ${Math.round(maxSize / (1024 * 1024))}MB)`);
+    }
+    
+    if (!validateFileType(file, file.originalFilename || file.name || '')) {
+      const filePath = getFilePath(file);
+      if (filePath && fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+      }
+      throw new Error(`${fileType} file type not allowed. Only PDF, DOC, and DOCX files are accepted.`);
+    }
+    
+    return file;
+  };
+
   try {
     const { fields, files } = await parseForm(req);
-    // Helper to get first value if array, else string
-    const getField = (f: any) => Array.isArray(f) ? f[0] : f || '';
-    // File size limits (bytes)
-    const MAX_CV_SIZE = 5 * 1024 * 1024; // 5MB
-    const MAX_COVER_LETTER_SIZE = 3 * 1024 * 1024; // 3MB
-    const MAX_RECOMMENDATION_SIZE = 3 * 1024 * 1024; // 3MB each
-    const MAX_CERTIFICATE_SIZE = 3 * 1024 * 1024; // 3MB each
-
-    // Helper to get file path or empty string
-    const getFilePath = (file: any) => file && !Array.isArray(file) ? (file.filepath || file.path) ?? '' : '';
-    // Helper to get array of file paths
-    const getFilePaths = (fileOrArr: any) => {
-      if (!fileOrArr) return [];
-      if (Array.isArray(fileOrArr)) return fileOrArr.map(getFilePath).filter(Boolean);
-      const single = getFilePath(fileOrArr);
-      return single ? [single] : [];
-    };
-
-    // Validate file sizes
-    const cvFile = files.cv as any;
-    if (cvFile && !Array.isArray(cvFile) && cvFile.size > MAX_CV_SIZE) {
-      fs.unlinkSync(getFilePath(cvFile));
-      return res.status(400).json({ error: 'CV file is too large (max 5MB)' });
+    
+    // Validate required fields
+    const requiredFields = ['name', 'email', 'gender', 'dob', 'nationality', 'position'];
+    for (const field of requiredFields) {
+      if (!getField(fields[field])) {
+        return res.status(400).json({ error: `Missing required field: ${field}` });
+      }
     }
-    const coverLetterFile = files.coverLetterFile as any;
-    if (coverLetterFile && !Array.isArray(coverLetterFile) && coverLetterFile.size > MAX_COVER_LETTER_SIZE) {
-      fs.unlinkSync(getFilePath(coverLetterFile));
-      return res.status(400).json({ error: 'Cover letter file is too large (max 3MB)' });
+
+    // Validate email format
+    const email = getField(fields.email);
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ error: 'Invalid email format' });
     }
-    const recommendationLetters = files.recommendationLetters as any;
+
+    // Validate date of birth
+    const dobString = getField(fields.dob);
+    const dob = new Date(dobString);
+    const today = new Date();
+    const age = today.getFullYear() - dob.getFullYear();
+    if (age < 10) {
+      return res.status(400).json({ error: 'Applicant must be at least 10 years old' });
+    }
+
+    // Validate CV is required
+    if (!files.cv) {
+      return res.status(400).json({ error: 'CV file is required' });
+    }
+
+    // Validate cover letter (text or file required)
+    const coverLetterText = getField(fields.coverLetter);
+    const coverLetterFile = files.coverLetterFile;
+    if (!coverLetterText && !coverLetterFile) {
+      return res.status(400).json({ error: 'Cover letter (text or file) is required' });
+    }
+
+    // Validate and process files
+    const cvFile = validateAndCleanupFile(files.cv, MAX_CV_SIZE, 'CV');
+    const processedCoverLetterFile = coverLetterFile ? 
+      validateAndCleanupFile(coverLetterFile, MAX_COVER_LETTER_SIZE, 'Cover letter') : null;
+
+    // Validate recommendation letters (max 3)
+    const recommendationLetters = files.recommendationLetters;
+    let processedRecommendationFiles: any[] = [];
     if (recommendationLetters) {
       const recFiles = Array.isArray(recommendationLetters) ? recommendationLetters : [recommendationLetters];
+      if (recFiles.length > 3) {
+        return res.status(400).json({ error: 'Maximum 3 recommendation letters allowed' });
+      }
+      
       for (const rec of recFiles) {
-        if (rec.size > MAX_RECOMMENDATION_SIZE) {
-          fs.unlinkSync(getFilePath(rec));
-          return res.status(400).json({ error: 'Each recommendation letter must be under 3MB' });
+        if (rec && rec.size > 0) { // Only process non-empty files
+          processedRecommendationFiles.push(
+            validateAndCleanupFile(rec, MAX_RECOMMENDATION_SIZE, 'Recommendation letter')
+          );
         }
       }
     }
-    const certificates = files.certificates as any;
+
+    // Validate certificates (max 5)
+    const certificates = files.certificates;
+    let processedCertificateFiles: any[] = [];
     if (certificates) {
       const certFiles = Array.isArray(certificates) ? certificates : [certificates];
+      if (certFiles.length > 5) {
+        return res.status(400).json({ error: 'Maximum 5 certificates allowed' });
+      }
+      
       for (const cert of certFiles) {
-        if (cert.size > MAX_CERTIFICATE_SIZE) {
-          fs.unlinkSync(getFilePath(cert));
-          return res.status(400).json({ error: 'Each certificate must be under 3MB' });
+        if (cert && cert.size > 0) { // Only process non-empty files
+          processedCertificateFiles.push(
+            validateAndCleanupFile(cert, MAX_CERTIFICATE_SIZE, 'Certificate')
+          );
         }
       }
     }
 
-    // Save file paths
+    // Get file paths
     const cvPath = getFilePath(cvFile);
-    const coverLetterFilePath = getFilePath(coverLetterFile);
-    const recommendationLetterPaths = getFilePaths(recommendationLetters);
-    const certificatePaths = getFilePaths(certificates);
+    const coverLetterFilePath = getFilePath(processedCoverLetterFile);
+    const recommendationLetterPaths = processedRecommendationFiles.map(getFilePath).filter(Boolean);
+    const certificatePaths = processedCertificateFiles.map(getFilePath).filter(Boolean);
 
-    // Save to DB (add new fields as needed)
+    // Save to database
     const application = await prisma.application.create({
       data: {
         name: getField(fields.name),
         email: getField(fields.email),
         position: getField(fields.position),
         gender: getField(fields.gender),
-        dob: getField(fields.dob),
+        dob: new Date(dobString),
         nationality: getField(fields.nationality),
-        coverLetter: getField(fields.coverLetter),
+        coverLetter: coverLetterText,
         cvPath,
-        coverLetterFilePath,
-        recommendationLetterPaths,
-        certificatePaths,
+        coverLetterFilePath: coverLetterFilePath || '',
+        recommendationLetterPaths: JSON.stringify(recommendationLetterPaths), // Convert array to JSON string
+        certificatePaths: JSON.stringify(certificatePaths), // Convert array to JSON string
       },
     });
-    return res.status(200).json({ success: true, application });
-  } catch (err) {
+
+    return res.status(200).json({ 
+      success: true, 
+      application: {
+        id: application.id,
+        name: application.name,
+        email: application.email,
+        position: application.position,
+        createdAt: application.createdAt
+      }
+    });
+  } catch (err: any) {
     console.error('Application error:', err);
-    return res.status(500).json({ error: 'Failed to process application' });
+    return res.status(500).json({ error: err.message || 'Failed to process application' });
   }
 }

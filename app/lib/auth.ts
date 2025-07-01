@@ -4,8 +4,21 @@ import { prisma } from "./prisma"
 import bcrypt from "bcrypt"
 import { SignUpInput } from "./validation"
 
-export async function getCurrentUser() {
-  const session = await getServerSession(authOptions)
+interface SessionUser {
+  id?: string;
+  name?: string;
+  email?: string;
+  image?: string;
+  role?: string;
+}
+
+interface Session {
+  user?: SessionUser;
+  expires?: string;
+}
+
+export async function getCurrentUser(): Promise<SessionUser | undefined> {
+  const session = await getServerSession(authOptions) as Session | null
   return session?.user
 }
 

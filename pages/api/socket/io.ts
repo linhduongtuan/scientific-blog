@@ -3,20 +3,14 @@ import { NextApiResponseServerIO } from '@/types/socket'
 import { Server as ServerIO } from 'socket.io'
 import { Server as NetServer } from 'http'
 import { PrismaClient } from '@prisma/client'
-import multer from 'multer'
 import path from 'path'
 import fs from 'fs'
 
-const prisma = new PrismaClient()
-
-// Configure multer for file uploads
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const upload = multer({
-  dest: 'public/uploads/',
-  limits: {
-    fileSize: 10 * 1024 * 1024, // 10MB limit
-  },
-})
+// Use a singleton for PrismaClient to avoid too many open connections in dev
+const globalForPrisma = global as unknown as { prisma: PrismaClient | undefined }
+export const prisma =
+  globalForPrisma.prisma || new PrismaClient()
+if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
 
 export default async function ioHandler(
   req: NextApiRequest,
@@ -63,6 +57,11 @@ export default async function ioHandler(
       // Handle room joining
       socket.on('join_room', async (roomId) => {
         try {
+          if (!roomId || typeof roomId !== 'string') {
+            socket.emit('error', { message: 'Invalid room ID' })
+            return
+          }
+          
           // Leave all rooms except the socket's own room
           const rooms = Array.from(socket.rooms).filter(room => room !== socket.id)
           rooms.forEach(room => socket.leave(room))
@@ -70,8 +69,11 @@ export default async function ioHandler(
           // Join new room
           socket.join(roomId)
           
-          // Notify room of new member
+          // Notify room of new member (but don't send to the joiner)
           socket.to(roomId).emit('room_joined', { roomId, username: 'User' })
+          
+          // Send confirmation to the joiner
+          socket.emit('room_joined_confirmation', { roomId })
           
           console.log(`User ${socket.id} joined room: ${roomId}`)
         } catch (error) {
@@ -82,8 +84,14 @@ export default async function ioHandler(
 
       // Handle room leaving
       socket.on('leave_room', (roomId) => {
+        if (!roomId || typeof roomId !== 'string') {
+          socket.emit('error', { message: 'Invalid room ID' })
+          return
+        }
+        
         socket.leave(roomId)
         socket.to(roomId).emit('room_left', { roomId, username: 'User' })
+        socket.emit('room_left_confirmation', { roomId })
         console.log(`User ${socket.id} left room: ${roomId}`)
       })
 
@@ -149,20 +157,43 @@ export default async function ioHandler(
       // Handle user typing
       socket.on('typing', (data) => {
         const { username, roomId = 'general' } = data
-        socket.to(roomId).emit('user_typing', { username, roomId })
+        if (username && roomId) {
+          socket.to(roomId).emit('user_typing', { username, roomId })
+        }
       })
 
       socket.on('stop_typing', (data) => {
         const { username, roomId = 'general' } = data
-        socket.to(roomId).emit('user_stop_typing', { username, roomId })
+        if (username && roomId) {
+          socket.to(roomId).emit('user_stop_typing', { username, roomId })
+        }
       })
 
       // Handle message reactions
       socket.on('add_reaction', async (data) => {
         try {
-          const { messageId, emoji, username, userId } = data
+          const { messageId, emoji, username, userId, roomId = 'general' } = data
+          
+          if (!messageId || !emoji) {
+            socket.emit('error', { message: 'Missing messageId or emoji' })
+            return
+          }
           
           const finalUserId = (!userId || userId === 'anonymous') ? null : userId
+          
+          // Check if reaction already exists to prevent duplicates
+          const existingReaction = await prisma.chatReaction.findFirst({
+            where: {
+              messageId,
+              emoji,
+              userId: finalUserId,
+            }
+          })
+          
+          if (existingReaction) {
+            socket.emit('error', { message: 'Reaction already exists' })
+            return
+          }
           
           const reaction = await prisma.chatReaction.create({
             data: {
@@ -172,8 +203,8 @@ export default async function ioHandler(
             }
           })
 
-          // Broadcast reaction to all clients
-          io.emit('reaction_added', { messageId, reaction: { ...reaction, username } })
+          // Broadcast reaction to room only (not all clients)
+          io.to(roomId).emit('reaction_added', { messageId, reaction: { ...reaction, username } })
         } catch (error) {
           console.error('Error adding reaction:', error)
           socket.emit('error', { message: 'Failed to add reaction' })
@@ -182,7 +213,12 @@ export default async function ioHandler(
       
       socket.on('remove_reaction', async (data) => {
         try {
-          const { messageId, emoji, username, userId } = data
+          const { messageId, emoji, username, userId, roomId = 'general' } = data
+          
+          if (!messageId || !emoji) {
+            socket.emit('error', { message: 'Missing messageId or emoji' })
+            return
+          }
           
           const finalUserId = (!userId || userId === 'anonymous') ? null : userId
           
@@ -199,8 +235,10 @@ export default async function ioHandler(
               where: { id: reaction.id }
             })
 
-            // Broadcast reaction removal to all clients
-            io.emit('reaction_removed', { messageId, reaction: { ...reaction, username } })
+            // Broadcast reaction removal to room only
+            io.to(roomId).emit('reaction_removed', { messageId, reaction: { ...reaction, username } })
+          } else {
+            socket.emit('error', { message: 'Reaction not found' })
           }
         } catch (error) {
           console.error('Error removing reaction:', error)
@@ -255,13 +293,25 @@ export default async function ioHandler(
       // Handle file upload
       socket.on('upload_file', async (data) => {
         try {
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
           const { file, fileName, fileType, username, userId, roomId = 'general' } = data
+          
+          if (!file || !fileName) {
+            socket.emit('error', { message: 'Missing file or fileName' })
+            return
+          }
+          
+          // Validate file size (10MB limit)
+          const maxFileSize = 10 * 1024 * 1024
+          if (file.length > maxFileSize) {
+            socket.emit('error', { message: 'File too large (max 10MB)' })
+            return
+          }
           
           // Generate unique filename
           const timestamp = Date.now()
           const ext = path.extname(fileName)
-          const uniqueFileName = `${timestamp}-${Math.random().toString(36).substr(2, 9)}${ext}`
+          const baseName = path.basename(fileName, ext)
+          const uniqueFileName = `${timestamp}-${baseName.substring(0, 50)}${ext}`
           const filePath = path.join(process.cwd(), 'public/uploads', uniqueFileName)
           
           // Save file
@@ -278,10 +328,30 @@ export default async function ioHandler(
               fileUrl,
               fileName,
               fileType,
+            },
+            include: {
+              user: true,
+              reactions: true,
             }
           })
           
-          io.to(roomId).emit('file_uploaded', { message })
+          const messageToSend = {
+            id: message.id,
+            content: message.content,
+            username: message.user?.name || username || 'Anonymous',
+            createdAt: message.createdAt,
+            updatedAt: message.updatedAt,
+            userId: message.userId,
+            roomId: message.roomId,
+            user: message.user,
+            reactions: message.reactions,
+            fileUrl: message.fileUrl,
+            fileName: message.fileName,
+            fileType: message.fileType,
+            replyToId: message.parentId
+          }
+          
+          io.to(roomId).emit('receive_message', messageToSend)
         } catch (error) {
           console.error('Error uploading file:', error)
           socket.emit('error', { message: 'Failed to upload file' })
@@ -289,13 +359,17 @@ export default async function ioHandler(
       })
       socket.on('send_private_message', async (data) => {
         try {
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
           const { content, username, userId, recipientUsername } = data
 
-          // Find recipient's socket
+          if (!content || !recipientUsername) {
+            socket.emit('error', { message: 'Missing content or recipient' })
+            return
+          }
+
+          // Find recipient's socket by username stored in socket data
           const recipientSocket = Array.from(io.sockets.sockets.values()).find(
-            (s) => (s as any).data.username === recipientUsername
-          ) as typeof socket | undefined;
+            (s) => (s as any).data?.username === recipientUsername
+          ) as typeof socket | undefined
 
           if (recipientSocket) {
             // Save private message to database
@@ -305,21 +379,38 @@ export default async function ioHandler(
                 userId: userId || null,
                 roomId: `private_${socket.id}_${recipientSocket.id}`,
               },
-            });
+              include: {
+                user: true,
+                reactions: true,
+              }
+            })
+
+            const messageToSend = {
+              id: message.id,
+              content: message.content,
+              username: message.user?.name || username || 'Anonymous',
+              createdAt: message.createdAt,
+              updatedAt: message.updatedAt,
+              userId: message.userId,
+              roomId: message.roomId,
+              user: message.user,
+              reactions: message.reactions,
+              isPrivate: true
+            }
 
             // Send to both sender and recipient
             io.to(recipientSocket.id)
               .to(socket.id)
-              .emit('receive_private_message', message);
+              .emit('receive_private_message', messageToSend)
           } else {
             // Handle user not found
-            socket.emit('error', { message: 'Recipient not found' });
+            socket.emit('error', { message: 'Recipient not found or offline' })
           }
         } catch (error) {
           console.error('Error sending private message:', error)
           socket.emit('error', { message: 'Failed to send private message' })
         }
-      });
+      })
       socket.on('disconnect', () => {
         console.log('User disconnected:', socket.id)
       })

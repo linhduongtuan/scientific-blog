@@ -1,6 +1,6 @@
 'use client'
 
-import React, { createContext, useContext, useEffect, useState } from 'react'
+import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react'
 import { io, Socket } from 'socket.io-client'
 import { ChatMessage, ChatRoom, ClientToServerEvents, ServerToClientEvents } from '@/types/socket'
 import { useAuth } from './AuthContext'
@@ -11,18 +11,21 @@ interface ChatContextType {
   currentRoom: string
   availableRooms: ChatRoom[]
   isConnected: boolean
+  isConnecting: boolean
+  connectionError: string | null
   sendMessage: (content: string, replyToId?: string) => void
   joinRoom: (roomId: string) => void
   addReaction: (messageId: string, emoji: string) => void
   removeReaction: (messageId: string, emoji: string) => void
   searchMessages: (query: string) => void
-  uploadFile: (file: File) => void
+  uploadFile: (file: File) => Promise<void>
   isTyping: string[]
   startTyping: () => void
   stopTyping: () => void
   searchResults: ChatMessage[]
   clearSearch: () => void
   sendPrivateMessage: (content: string, recipientUsername: string) => void
+  reconnect: () => void
 }
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined)
@@ -38,27 +41,37 @@ export function ChatProvider({ children }: ChatProviderProps) {
   const [currentRoom, setCurrentRoom] = useState<string>('general')
   const [availableRooms, setAvailableRooms] = useState<ChatRoom[]>([])
   const [isConnected, setIsConnected] = useState(false)
+  const [isConnecting, setIsConnecting] = useState(false)
+  const [connectionError, setConnectionError] = useState<string | null>(null)
   const [isTyping, setIsTyping] = useState<string[]>([])
   const [searchResults, setSearchResults] = useState<ChatMessage[]>([])
   const [privateMessages, setPrivateMessages] = useState<ChatMessage[]>([])
-  const [isInitialized, setIsInitialized] = useState(false) // Prevent multiple connections
+  const isInitialized = useRef(false)
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
-  // Get username for display
-  const getUsername = () => {
+  // Get username for display - memoized to prevent unnecessary recalculations
+  const getUsername = useCallback(() => {
     if (user?.name) return user.name
     if (user?.email) return user.email.split('@')[0]
     return `Guest ${Math.floor(Math.random() * 1000)}`
-  }
+  }, [user?.name, user?.email])
+
+  // Get user ID - memoized for consistency
+  const getUserId = useCallback(() => {
+    return user?.id || 'anonymous'
+  }, [user?.id])
 
   useEffect(() => {
     // Prevent creating multiple connections
-    if (socket || isInitialized) {
+    if (socket || isInitialized.current) {
       console.log('Socket already exists or initialized, skipping connection')
       return
     }
 
     console.log('🔌 Initializing new socket connection...')
-    setIsInitialized(true)
+    isInitialized.current = true
+    setIsConnecting(true)
+    setConnectionError(null)
     
     // Initialize socket connection
     const socketInstance = io(process.env.NODE_ENV === 'production' 
@@ -80,6 +93,8 @@ export function ChatProvider({ children }: ChatProviderProps) {
     const onConnect = () => {
       console.log('✅ Connected to chat server')
       setIsConnected(true)
+      setIsConnecting(false)
+      setConnectionError(null)
       // Test connection by emitting a ping
       socketInstance.emit('ping')
       // Room joining is now handled in separate useEffect
@@ -88,11 +103,14 @@ export function ChatProvider({ children }: ChatProviderProps) {
     const onDisconnect = () => {
       console.log('❌ Disconnected from chat server')
       setIsConnected(false)
+      setIsConnecting(false)
     }
 
     const onConnectError = (error: any) => {
       console.error('❌ Connection error:', error)
       setIsConnected(false)
+      setIsConnecting(false)
+      setConnectionError(error?.message || 'Connection failed')
     }
 
     const onReceiveMessage = (message: ChatMessage) => {
@@ -185,7 +203,8 @@ export function ChatProvider({ children }: ChatProviderProps) {
       socketInstance.disconnect()
       setSocket(null)
       setIsConnected(false)
-      setIsInitialized(false) // Allow reconnection if component remounts
+      setIsConnecting(false)
+      isInitialized.current = false // Allow reconnection if component remounts
     }
   }, []) // Remove currentRoom dependency
 
@@ -254,7 +273,7 @@ export function ChatProvider({ children }: ChatProviderProps) {
     }
   }
 
-  const sendMessage = (content: string, replyToId?: string) => {
+  const sendMessage = useCallback((content: string, replyToId?: string) => {
     if (!content.trim()) {
       console.warn('Cannot send message: empty content')
       return
@@ -271,7 +290,7 @@ export function ChatProvider({ children }: ChatProviderProps) {
     }
 
     const username = getUsername()
-    const userId = user?.id || 'anonymous'
+    const userId = getUserId()
 
     console.log('📤 Sending message:', { content, username, userId, roomId: currentRoom })
 
@@ -287,7 +306,7 @@ export function ChatProvider({ children }: ChatProviderProps) {
     } catch (error) {
       console.error('❌ Failed to send message:', error)
     }
-  }
+  }, [socket, isConnected, currentRoom, getUsername, getUserId])
 
   const joinRoom = (roomId: string) => {
     if (!socket) {
@@ -358,15 +377,21 @@ export function ChatProvider({ children }: ChatProviderProps) {
     }
   }
 
-  const uploadFile = async (file: File) => {
+  const uploadFile = useCallback(async (file: File): Promise<void> => {
     if (!socket) {
       console.error('Cannot upload file: socket not initialized')
-      return
+      throw new Error('Socket not initialized')
     }
 
     if (!isConnected) {
       console.error('Cannot upload file: not connected to server')
-      return
+      throw new Error('Not connected to server')
+    }
+
+    // Validate file size (10MB limit)
+    const maxSize = 10 * 1024 * 1024
+    if (file.size > maxSize) {
+      throw new Error('File too large (max 10MB)')
     }
 
     console.log('📎 Starting file upload:', file.name, file.type, file.size)
@@ -380,34 +405,45 @@ export function ChatProvider({ children }: ChatProviderProps) {
         body: formData,
       })
       
-      if (response.ok) {
-        const data = await response.json()
-        console.log('✅ File uploaded successfully:', data)
-        
-        // Send the file info via socket
-        const username = getUsername()
-        const userId = user?.id || 'anonymous'
-        
-        socket.emit('send_message', {
-          content: `📎 Shared a file: ${data.fileName}`,
-          fileUrl: data.fileUrl,
-          fileName: data.fileName,
-          fileType: data.fileType,
-          username,
-          userId,
-          roomId: currentRoom
-        })
-        console.log('✅ File message sent successfully')
-      } else {
+      if (!response.ok) {
         const errorData = await response.json()
-        console.error('❌ Failed to upload file:', errorData)
         throw new Error(errorData.error || 'Upload failed')
       }
+
+      const data = await response.json()
+      console.log('✅ File uploaded successfully:', data)
+      
+      // Send the file info via socket
+      const username = getUsername()
+      const userId = getUserId()
+      
+      socket.emit('send_message', {
+        content: `📎 Shared a file: ${data.fileName}`,
+        fileUrl: data.fileUrl,
+        fileName: data.fileName,
+        fileType: data.fileType,
+        username,
+        userId,
+        roomId: currentRoom
+      })
+      console.log('✅ File message sent successfully')
     } catch (error) {
       console.error('❌ Error uploading file:', error)
-      // You might want to show an error message to the user here
+      throw error
     }
-  }
+  }, [socket, isConnected, currentRoom, getUsername, getUserId])
+
+  const reconnect = useCallback(() => {
+    if (socket) {
+      socket.disconnect()
+      setSocket(null)
+      setIsConnected(false)
+      setIsConnecting(false)
+      isInitialized.current = false
+    }
+    // Trigger reconnection by updating a dependency
+    setConnectionError(null)
+  }, [socket])
 
   const startTyping = () => {
     if (!socket) return
@@ -447,6 +483,8 @@ export function ChatProvider({ children }: ChatProviderProps) {
       currentRoom,
       availableRooms,
       isConnected,
+      isConnecting,
+      connectionError,
       sendMessage,
       joinRoom,
       addReaction,
@@ -458,7 +496,8 @@ export function ChatProvider({ children }: ChatProviderProps) {
       stopTyping,
       searchResults,
       clearSearch,
-      sendPrivateMessage
+      sendPrivateMessage,
+      reconnect
     }}>
       {children}
     </ChatContext.Provider>

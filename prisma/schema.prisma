@@ -1,3 +1,29 @@
+// This is your Prisma schema file
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite" // Using SQLite for easier development setup
+  url      = env("DATABASE_URL")
+}
+
+model Application {
+  id                         String   @id @default(cuid())
+  name                       String
+  email                      String
+  gender                     String
+  dob                        DateTime
+  nationality                String
+  position                   String
+  coverLetter                String
+  cvPath                     String
+  coverLetterFilePath        String?
+  recommendationLetterPaths  String   // Storing JSON array as string
+  certificatePaths           String   // Storing JSON array as string
+  createdAt                  DateTime @default(now())
+}
+
 // Lab Members
 model Member {
   id        String   @id @default(cuid())
@@ -11,12 +37,16 @@ model Member {
 
 // Lab Alumni
 model Alumni {
-  id        String   @id @default(cuid())
-  name      String
-  current   String
-  bio       String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id             String   @id @default(cuid())
+  name           String
+  email          String?
+  graduationYear Int?
+  current        String
+  occupation     String?
+  company        String?
+  bio            String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 }
 
 // Lab News
@@ -28,26 +58,6 @@ model News {
   link      String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-}
-
-model Application {
-  id          String   @id @default(cuid())
-  name        String
-  email       String
-  position    String
-  coverLetter String
-  cvPath      String
-  createdAt   DateTime @default(now())
-}
-
-// This is your Prisma schema file
-generator client {
-  provider = "prisma-client-js"
-}
-
-datasource db {
-  provider = "sqlite" // Using SQLite for easier development setup
-  url      = env("DATABASE_URL")
 }
 
 model User {
