@@ -1,6 +1,6 @@
 'use client'
 
-import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react'
+import React, { createContext, useContext, useEffect, useState } from 'react'
 import { io, Socket } from 'socket.io-client'
 import { ChatMessage, ChatRoom, ClientToServerEvents, ServerToClientEvents } from '@/types/socket'
 import { useAuth } from './AuthContext'
@@ -11,21 +11,18 @@ interface ChatContextType {
   currentRoom: string
   availableRooms: ChatRoom[]
   isConnected: boolean
-  isConnecting: boolean
-  connectionError: string | null
   sendMessage: (content: string, replyToId?: string) => void
   joinRoom: (roomId: string) => void
   addReaction: (messageId: string, emoji: string) => void
   removeReaction: (messageId: string, emoji: string) => void
   searchMessages: (query: string) => void
-  uploadFile: (file: File) => Promise<void>
+  uploadFile: (file: File) => void
   isTyping: string[]
   startTyping: () => void
   stopTyping: () => void
   searchResults: ChatMessage[]
   clearSearch: () => void
   sendPrivateMessage: (content: string, recipientUsername: string) => void
-  reconnect: () => void
 }
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined)
@@ -41,37 +38,27 @@ export function ChatProvider({ children }: ChatProviderProps) {
   const [currentRoom, setCurrentRoom] = useState<string>('general')
   const [availableRooms, setAvailableRooms] = useState<ChatRoom[]>([])
   const [isConnected, setIsConnected] = useState(false)
-  const [isConnecting, setIsConnecting] = useState(false)
-  const [connectionError, setConnectionError] = useState<string | null>(null)
   const [isTyping, setIsTyping] = useState<string[]>([])
   const [searchResults, setSearchResults] = useState<ChatMessage[]>([])
   const [privateMessages, setPrivateMessages] = useState<ChatMessage[]>([])
-  const isInitialized = useRef(false)
-  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const [isInitialized, setIsInitialized] = useState(false) // Prevent multiple connections
 
-  // Get username for display - memoized to prevent unnecessary recalculations
-  const getUsername = useCallback(() => {
+  // Get username for display
+  const getUsername = () => {
     if (user?.name) return user.name
     if (user?.email) return user.email.split('@')[0]
     return `Guest ${Math.floor(Math.random() * 1000)}`
-  }, [user?.name, user?.email])
-
-  // Get user ID - memoized for consistency
-  const getUserId = useCallback(() => {
-    return user?.id || 'anonymous'
-  }, [user?.id])
+  }
 
   useEffect(() => {
     // Prevent creating multiple connections
-    if (socket || isInitialized.current) {
+    if (socket || isInitialized) {
       console.log('Socket already exists or initialized, skipping connection')
       return
     }
 
     console.log('🔌 Initializing new socket connection...')
-    isInitialized.current = true
-    setIsConnecting(true)
-    setConnectionError(null)
+    setIsInitialized(true)
     
     // Initialize socket connection
     const socketInstance = io(process.env.NODE_ENV === 'production' 
@@ -93,8 +80,6 @@ export function ChatProvider({ children }: ChatProviderProps) {
     const onConnect = () => {
       console.log('✅ Connected to chat server')
       setIsConnected(true)
-      setIsConnecting(false)
-      setConnectionError(null)
       // Test connection by emitting a ping
       socketInstance.emit('ping')
       // Room joining is now handled in separate useEffect
@@ -103,18 +88,52 @@ export function ChatProvider({ children }: ChatProviderProps) {
     const onDisconnect = () => {
       console.log('❌ Disconnected from chat server')
       setIsConnected(false)
-      setIsConnecting(false)
     }
 
     const onConnectError = (error: any) => {
       console.error('❌ Connection error:', error)
       setIsConnected(false)
-      setIsConnecting(false)
-      setConnectionError(error?.message || 'Connection failed')
     }
 
     const onReceiveMessage = (message: ChatMessage) => {
-      setMessages(prev => [...prev, message])
+      console.log('📨 Received new message from socket:', message)
+      
+      try {
+        // Ensure the message has all required properties
+        const formattedMessage = {
+          ...message,
+          reactions: message.reactions || [],
+          isSystem: message.isSystem ?? false,
+          isEdited: message.isEdited ?? false,
+          isPrivate: message.isPrivate ?? false,
+          createdAt: message.createdAt instanceof Date ? message.createdAt : new Date(message.createdAt),
+          updatedAt: message.updatedAt instanceof Date ? message.updatedAt : new Date(message.updatedAt)
+        }
+        
+        // Only update messages if this message is for the current room
+        if (formattedMessage.roomId === currentRoom) {
+          setMessages(prev => {
+            // Check if message already exists to avoid duplicates
+            const messageExists = prev.some(m => m.id === formattedMessage.id);
+            
+            if (messageExists) {
+              console.log('📨 Message already exists in state, not adding duplicate:', formattedMessage.id);
+              return prev;
+            }
+            
+            const newMessages = [...prev, formattedMessage];
+            console.log('📨 Updated messages array, now has', newMessages.length, 'messages', 
+              'Latest message:', formattedMessage.content);
+            return newMessages;
+          });
+        } else {
+          console.log('📨 Message is for a different room:', formattedMessage.roomId, 
+            'Current room:', currentRoom);
+        }
+        
+      } catch (error) {
+        console.error('Error processing received message:', error);
+      }
     }
 
     const onUserTyping = (data: { username: string }) => {
@@ -203,8 +222,7 @@ export function ChatProvider({ children }: ChatProviderProps) {
       socketInstance.disconnect()
       setSocket(null)
       setIsConnected(false)
-      setIsConnecting(false)
-      isInitialized.current = false // Allow reconnection if component remounts
+      setIsInitialized(false) // Allow reconnection if component remounts
     }
   }, []) // Remove currentRoom dependency
 
@@ -225,13 +243,32 @@ export function ChatProvider({ children }: ChatProviderProps) {
         const data = await response.json()
         console.log('📚 Loaded', data.messages?.length || 0, 'messages for room:', currentRoom)
         
-        // Transform messages to include username for display
+        if (data.messages && data.messages.length > 0) {
+          console.log('📝 First message sample:', data.messages[0])
+          console.log('📝 Last message sample:', data.messages[data.messages.length - 1])
+        } else {
+          console.log('⚠️ No messages returned from API for room:', currentRoom)
+        }
+        
+        if (!Array.isArray(data.messages)) {
+          console.error('❌ API returned invalid data format - messages is not an array:', data)
+          setMessages([])
+          return
+        }
+        
+        // Transform messages to include username for display and ensure all required fields exist
         const transformedMessages = (data.messages || []).map((msg: any) => ({
           ...msg,
           username: msg.user?.name || msg.user?.email?.split('@')[0] || 'Anonymous',
-          reactions: msg.reactions || []
+          reactions: msg.reactions || [],
+          isSystem: msg.isSystem ?? false,
+          isEdited: msg.isEdited ?? false,
+          isPrivate: msg.isPrivate ?? false,
+          createdAt: new Date(msg.createdAt),
+          updatedAt: new Date(msg.updatedAt)
         }))
         
+        console.log('📚 Setting messages array with', transformedMessages.length, 'messages')
         setMessages(transformedMessages)
       } else {
         console.warn('Failed to load chat history for room:', currentRoom, '- Status:', response.status)
@@ -273,7 +310,7 @@ export function ChatProvider({ children }: ChatProviderProps) {
     }
   }
 
-  const sendMessage = useCallback((content: string, replyToId?: string) => {
+  const sendMessage = (content: string, replyToId?: string) => {
     if (!content.trim()) {
       console.warn('Cannot send message: empty content')
       return
@@ -290,11 +327,32 @@ export function ChatProvider({ children }: ChatProviderProps) {
     }
 
     const username = getUsername()
-    const userId = getUserId()
+    const userId = user?.id || 'anonymous'
 
-    console.log('📤 Sending message:', { content, username, userId, roomId: currentRoom })
+    console.log('📤 Sending message:', { content, username, userId, roomId: currentRoom, replyToId })
 
     try {
+      // Create a temporary optimistic message that will be replaced when server confirms
+      const tempId = `temp-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`
+      const tempMessage: ChatMessage = {
+        id: tempId,
+        content: content.trim(),
+        username,
+        userId,
+        roomId: currentRoom,
+        replyToId,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        reactions: [],
+        isSystem: false,
+        isEdited: false,
+        isPrivate: false
+      }
+      
+      // Add optimistic message to state first for immediate feedback
+      // Uncomment this if you want optimistic updates:
+      // setMessages(prev => [...prev, tempMessage]);
+      
       socket.emit('send_message', {
         content: content.trim(),
         username,
@@ -302,11 +360,11 @@ export function ChatProvider({ children }: ChatProviderProps) {
         roomId: currentRoom,
         replyToId
       })
-      console.log('✅ Message sent successfully')
+      console.log('✅ Message sent to socket server:', content.substring(0, 30))
     } catch (error) {
       console.error('❌ Failed to send message:', error)
     }
-  }, [socket, isConnected, currentRoom, getUsername, getUserId])
+  }
 
   const joinRoom = (roomId: string) => {
     if (!socket) {
@@ -377,21 +435,15 @@ export function ChatProvider({ children }: ChatProviderProps) {
     }
   }
 
-  const uploadFile = useCallback(async (file: File): Promise<void> => {
+  const uploadFile = async (file: File) => {
     if (!socket) {
       console.error('Cannot upload file: socket not initialized')
-      throw new Error('Socket not initialized')
+      return
     }
 
     if (!isConnected) {
       console.error('Cannot upload file: not connected to server')
-      throw new Error('Not connected to server')
-    }
-
-    // Validate file size (10MB limit)
-    const maxSize = 10 * 1024 * 1024
-    if (file.size > maxSize) {
-      throw new Error('File too large (max 10MB)')
+      return
     }
 
     console.log('📎 Starting file upload:', file.name, file.type, file.size)
@@ -405,45 +457,34 @@ export function ChatProvider({ children }: ChatProviderProps) {
         body: formData,
       })
       
-      if (!response.ok) {
+      if (response.ok) {
+        const data = await response.json()
+        console.log('✅ File uploaded successfully:', data)
+        
+        // Send the file info via socket
+        const username = getUsername()
+        const userId = user?.id || 'anonymous'
+        
+        socket.emit('send_message', {
+          content: `📎 Shared a file: ${data.fileName}`,
+          fileUrl: data.fileUrl,
+          fileName: data.fileName,
+          fileType: data.fileType,
+          username,
+          userId,
+          roomId: currentRoom
+        })
+        console.log('✅ File message sent successfully')
+      } else {
         const errorData = await response.json()
+        console.error('❌ Failed to upload file:', errorData)
         throw new Error(errorData.error || 'Upload failed')
       }
-
-      const data = await response.json()
-      console.log('✅ File uploaded successfully:', data)
-      
-      // Send the file info via socket
-      const username = getUsername()
-      const userId = getUserId()
-      
-      socket.emit('send_message', {
-        content: `📎 Shared a file: ${data.fileName}`,
-        fileUrl: data.fileUrl,
-        fileName: data.fileName,
-        fileType: data.fileType,
-        username,
-        userId,
-        roomId: currentRoom
-      })
-      console.log('✅ File message sent successfully')
     } catch (error) {
       console.error('❌ Error uploading file:', error)
-      throw error
+      // You might want to show an error message to the user here
     }
-  }, [socket, isConnected, currentRoom, getUsername, getUserId])
-
-  const reconnect = useCallback(() => {
-    if (socket) {
-      socket.disconnect()
-      setSocket(null)
-      setIsConnected(false)
-      setIsConnecting(false)
-      isInitialized.current = false
-    }
-    // Trigger reconnection by updating a dependency
-    setConnectionError(null)
-  }, [socket])
+  }
 
   const startTyping = () => {
     if (!socket) return
@@ -483,8 +524,6 @@ export function ChatProvider({ children }: ChatProviderProps) {
       currentRoom,
       availableRooms,
       isConnected,
-      isConnecting,
-      connectionError,
       sendMessage,
       joinRoom,
       addReaction,
@@ -496,8 +535,7 @@ export function ChatProvider({ children }: ChatProviderProps) {
       stopTyping,
       searchResults,
       clearSearch,
-      sendPrivateMessage,
-      reconnect
+      sendPrivateMessage
     }}>
       {children}
     </ChatContext.Provider>

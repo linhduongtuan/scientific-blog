@@ -263,6 +263,15 @@ const MessageBubble = ({ message, onAddReaction, onRemoveReaction, onReply, onPr
   const { user } = useAuth()
   const [showEmojiPicker, setShowEmojiPicker] = useState(false)
   
+  // Debug message content with more detailed logging
+  console.log('📝 Rendering message:', { 
+    id: message.id, 
+    content: message.content, 
+    username: message.username,
+    createdAt: message.createdAt instanceof Date ? message.createdAt : new Date(message.createdAt),
+    roomId: message.roomId
+  })
+  
   const getCurrentUsername = () => {
     if (user?.name) return user.name
     if (user?.email) return user.email.split('@')[0]
@@ -466,6 +475,13 @@ export default function Chat({ isOpen, onCloseAction }: ChatProps) {
     currentRoom, availableRooms, joinRoom, addReaction, removeReaction,
     searchMessages, uploadFile, searchResults, clearSearch
   } = useChat()
+  
+  // Debug messages array
+  console.log('📦 Chat component messages:', { 
+    count: messages?.length || 0, 
+    currentRoom, 
+    connected: isConnected
+  })
   const [mounted, setMounted] = useState(false)
   const [inputMessage, setInputMessage] = useState('')
   const [isMinimized, setIsMinimized] = useState(false)
@@ -489,7 +505,22 @@ export default function Chat({ isOpen, onCloseAction }: ChatProps) {
 
   // Auto scroll to bottom when new messages arrive
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+    console.log('💬 Messages array updated, new length:', messages.length);
+    
+    if (messagesEndRef.current) {
+      // Immediate scroll for responsiveness
+      messagesEndRef.current.scrollIntoView({ behavior: 'auto', block: 'end' });
+      
+      // Smoother scroll after a small delay to ensure proper rendering
+      setTimeout(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+      }, 100);
+      
+      // Final check after all animations and renderings should be complete
+      setTimeout(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'auto', block: 'end' });
+      }, 300);
+    }
   }, [messages])
 
   // Focus input when chat opens
@@ -724,7 +755,7 @@ export default function Chat({ isOpen, onCloseAction }: ChatProps) {
           )}
 
           {/* Magical Messages Area */}
-          <div className="flex-1 overflow-y-auto p-3 space-y-1 relative" style={{ height: showSearch || replyTo ? 'calc(100% - 160px)' : 'calc(100% - 100px)', scrollbarWidth: 'thin', scrollbarColor: '#3B82F6 transparent' }}>
+          <div className="flex-1 overflow-y-auto p-3 space-y-1 relative pb-14" style={{ height: showSearch || replyTo ? 'calc(100% - 160px)' : 'calc(100% - 100px)', scrollbarWidth: 'thin', scrollbarColor: '#3B82F6 transparent' }}>
             {/* Custom scrollbar styles */}
             <style jsx>{`
               div::-webkit-scrollbar {
@@ -742,7 +773,25 @@ export default function Chat({ isOpen, onCloseAction }: ChatProps) {
               }
             `}</style>
             
-            {(searchResults || messages).length === 0 ? (
+            {/* Debug messages */}
+            {(() => {
+              console.log('🔍 Rendering messages area, messages:', messages?.length || 0, 
+                'searchResults:', searchResults?.length || 0, 
+                'currentRoom:', currentRoom,
+                'connected:', isConnected);
+              
+              if (messages && messages.length > 0) {
+                console.log('📑 Last message in state:', {
+                  id: messages[messages.length - 1].id,
+                  content: messages[messages.length - 1].content,
+                  username: messages[messages.length - 1].username,
+                  roomId: messages[messages.length - 1].roomId
+                });
+              }
+              return null;
+            })()}
+            
+            {(!messages || !messages.length) && (!searchResults || !searchResults.length) ? (
               <div className="text-center py-16 animate-in fade-in duration-700">
                 <div className="relative mx-auto w-24 h-24 mb-6">
                   {/* Magical floating elements */}
@@ -776,16 +825,22 @@ export default function Chat({ isOpen, onCloseAction }: ChatProps) {
                 </div>
               </div>
             ) : (
-              (searchResults || messages).map((message) => (
-                <MessageBubble
-                  key={message.id}
-                  message={message}
-                  onAddReaction={addReaction}
-                  onRemoveReaction={removeReaction}
-                  onReply={handleReply}
-                  onPrivateMessage={handlePrivateMessage}
-                />
-              ))
+              // Ensure we have an array of messages to work with
+              Array.isArray(searchResults?.length ? searchResults : messages) ? 
+                (searchResults?.length ? searchResults : messages).map((message) => (
+                  <MessageBubble
+                    key={message.id}
+                    message={message}
+                    onAddReaction={addReaction}
+                    onRemoveReaction={removeReaction}
+                    onReply={handleReply}
+                    onPrivateMessage={handlePrivateMessage}
+                  />
+                )) : (
+                  <div className="p-4 text-center text-red-500">
+                    Error: Invalid message data format. Please refresh the page.
+                  </div>
+                )
             )}
             
             {/* Enhanced Typing indicators */}
@@ -817,11 +872,11 @@ export default function Chat({ isOpen, onCloseAction }: ChatProps) {
               </div>
             )}
             
-            <div ref={messagesEndRef} />
+            <div ref={messagesEndRef} className="h-14" />
           </div>
 
           {/* Magical Chat Input Area */}
-          <div className="absolute bottom-0 left-0 right-0 border-t border-white/20 dark:border-gray-700/30 p-3 bg-gradient-to-r from-gray-50/90 via-white/95 to-gray-50/90 dark:from-gray-800/90 dark:via-gray-900/95 dark:to-gray-800/90 backdrop-blur-xl rounded-b-3xl">
+          <div className="absolute bottom-0 left-0 right-0 border-t border-white/20 dark:border-gray-700/30 p-3 bg-gradient-to-r from-gray-50/90 via-white/95 to-gray-50/90 dark:from-gray-800/90 dark:via-gray-900/95 dark:to-gray-800/90 backdrop-blur-xl rounded-b-3xl z-10">
             <form onSubmit={handleSendMessage} className="flex space-x-2">
               <div className="flex-1 relative">
                 {/* Magical input container */}

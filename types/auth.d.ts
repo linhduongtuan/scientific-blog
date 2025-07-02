@@ -1,29 +1,31 @@
 declare module "next-auth" {
   interface Session {
-    user?: {
-      id?: string;
+    user: {
+      id: string;
       name?: string;
       email?: string;
       image?: string;
-      role?: string;
+      role: string;
       subscribed?: boolean;
     };
+    accessToken?: string;
   }
 
   interface User {
-    id?: string;
+    id: string;
     name?: string;
     email?: string;
     image?: string;
-    role?: string;
+    role: string;
     subscribed?: boolean;
   }
 }
 
 declare module "next-auth/jwt" {
   interface JWT {
-    id?: string;
-    role?: string;
+    id: string;
+    role: string;
     subscribed?: boolean;
+    accessToken?: string;
   }
 }
